@@ -13,6 +13,8 @@ import 'package:immich_mobile/domain/models/exif.model.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/providers/theme.provider.dart';
 import 'package:immich_mobile/theme/theme_data.dart';
+import 'package:immich_mobile/constants/adjustments.dart';
+import 'package:immich_mobile/presentation/widgets/editing/adjust_panel.dart';
 import 'package:immich_mobile/utils/editor.utils.dart';
 import 'package:immich_ui/immich_ui.dart';
 import 'package:openapi/api.dart' show CropParameters, RotateParameters, MirrorParameters, MirrorAxis;
@@ -56,7 +58,8 @@ class _DriftEditImagePageState extends ConsumerState<DriftEditImagePage> with Ti
   bool _isApplyingEdits = false;
   bool _hasSheetChanges = false;
   late final Rect _initialCrop;
-  final String _selectedSegment = 'transform';
+  String _selectedSegment = 'transform';
+  AdjustValues _adjustValues = const AdjustValues();
 
   List<AspectRatio> aspectRatios = [
     (ratio: null, label: 'Free'),
@@ -135,6 +138,21 @@ class _DriftEditImagePageState extends ConsumerState<DriftEditImagePage> with Ti
         AssetEdit(
           action: AssetEditAction.rotate,
           parameters: RotateParameters(angle: normalizedRotation).toJson(),
+        ),
+      );
+    }
+
+    if (_adjustValues.hasChanges) {
+      edits.add(
+        AssetEdit(
+          action: AssetEditAction.adjust,
+          parameters: {
+            'brightness': _adjustValues.brightness,
+            'contrast': _adjustValues.contrast,
+            'saturation': _adjustValues.saturation,
+            'warmth': _adjustValues.warmth,
+            'sharpness': _adjustValues.sharpness,
+          },
         ),
       );
     }
@@ -219,6 +237,7 @@ class _DriftEditImagePageState extends ConsumerState<DriftEditImagePage> with Ti
       _flipHorizontal = false;
       _flipVertical = false;
       _aspectRatio = null;
+      _adjustValues = const AdjustValues();
     });
   }
 
@@ -227,7 +246,7 @@ class _DriftEditImagePageState extends ConsumerState<DriftEditImagePage> with Ti
     final isRotated = (_rotationAngle % 360 + 360) % 360 != 0;
     final isFlipped = _flipHorizontal || _flipVertical;
 
-    return isCropped || isRotated || isFlipped;
+    return isCropped || isRotated || isFlipped || _adjustValues.hasChanges;
   }
 
   Future<bool> _showDiscardChangesDialog() async {
@@ -326,10 +345,13 @@ class _DriftEditImagePageState extends ConsumerState<DriftEditImagePage> with Ti
                                     return const Center(child: CircularProgressIndicator());
                                   }
 
-                                  return CropImage(
-                                    controller: cropController,
-                                    image: widget.image,
-                                    gridColor: Colors.white,
+                                  return ColorFiltered(
+                                    colorFilter: adjustValuesToColorFilter(_adjustValues),
+                                    child: CropImage(
+                                      controller: cropController,
+                                      image: widget.image,
+                                      gridColor: Colors.white,
+                                    ),
                                   );
                                 },
                               ),
@@ -373,32 +395,39 @@ class _DriftEditImagePageState extends ConsumerState<DriftEditImagePage> with Ti
                             onAspectRatioSelected: _applyAspectRatio,
                             aspectRatio: _aspectRatio,
                           ),
-                          // this will never show since the segmented button is not shown yet
-                          secondChild: const Text("Filters coming soon!"),
+                          secondChild: AdjustPanel(
+                            initialValues: _adjustValues,
+                            onChanged: (values) {
+                              setState(() {
+                                _adjustValues = values;
+                                _hasSheetChanges = true;
+                              });
+                            },
+                          ),
                         ),
                         Padding(
                           padding: const EdgeInsets.only(bottom: 36, left: 24, right: 24),
                           child: Row(
                             children: [
-                              // SegmentedButton(
-                              //   segments: [
-                              //     const ButtonSegment<String>(
-                              //       value: 'transform',
-                              //       label: Text('Transform'),
-                              //       icon: Icon(Icons.transform),
-                              //     ),
-                              //     const ButtonSegment<String>(
-                              //       value: 'filters',
-                              //       label: Text('Filters'),
-                              //       icon: Icon(Icons.color_lens),
-                              //     ),
-                              //   ],
-                              //   selected: {selectedSegment},
-                              //   onSelectionChanged: (value) => setState(() {
-                              //     selectedSegment = value.first;
-                              //   }),
-                              //   showSelectedIcon: false,
-                              // ),
+                              SegmentedButton<String>(
+                                segments: [
+                                  ButtonSegment<String>(
+                                    value: 'transform',
+                                    label: Text('transform'.tr()),
+                                    icon: const Icon(Icons.transform),
+                                  ),
+                                  ButtonSegment<String>(
+                                    value: 'adjust',
+                                    label: Text('adjust'.tr()),
+                                    icon: const Icon(Icons.tune),
+                                  ),
+                                ],
+                                selected: {_selectedSegment},
+                                onSelectionChanged: (value) => setState(() {
+                                  _selectedSegment = value.first;
+                                }),
+                                showSelectedIcon: false,
+                              ),
                               const Spacer(),
                               ImmichTextButton(
                                 labelText: 'reset'.tr(),
