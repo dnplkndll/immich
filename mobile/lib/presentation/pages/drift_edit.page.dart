@@ -293,7 +293,7 @@ class _DriftEditImagePageState extends ConsumerState<DriftEditImagePage> with Ti
           ),
           backgroundColor: Colors.black,
           body: SafeArea(
-            bottom: false,
+            bottom: true,
             child: Column(
               children: [
                 Expanded(
