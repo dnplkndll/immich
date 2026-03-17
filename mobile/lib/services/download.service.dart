@@ -108,8 +108,11 @@ class DownloadService {
 
       return result != null;
     } on PlatformException catch (error, stack) {
-      // Handle saving MotionPhotos on iOS
+      // Handle saving MotionPhotos or incompatible Live Photos on iOS.
+      // PHPhotosErrorDomain (-1): general error (e.g. Android motion photo)
+      // PHPhotosErrorDomain (-3302): invalid resource (e.g. mismatched CID or format)
       if (error.code.startsWith('PHPhotosErrorDomain')) {
+        _log.warning("Live photo save failed (${error.code}), falling back to image-only save");
         final result = await _fileMediaRepository.saveImageWithFile(imageFilePath, title: task.filename);
         return result != null;
       }
@@ -157,7 +160,7 @@ class DownloadService {
         ),
         _buildDownloadTask(
           asset.livePhotoVideoId!,
-          asset.fileName.toUpperCase().replaceAll(RegExp(r"\.(JPG|HEIC)$"), '.MOV'),
+          asset.fileName.replaceAll(RegExp(r"\.[^.]+$", caseSensitive: false), '.MOV'),
           group: kDownloadGroupLivePhoto,
           metadata: LivePhotosMetadata(part: LivePhotosPart.video, id: asset.remoteId!).toJson(),
         ),
