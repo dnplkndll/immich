@@ -4,12 +4,16 @@
 <dict>
 	<key>AppGroupId</key>
 	<string>$(CUSTOM_GROUP_ID)</string>
+	<key>ForkAppGroup</key>
+	<string>$(FORK_APP_GROUP)</string>
+	<key>ForkBundlePrefix</key>
+	<string>$(FORK_BUNDLE_PREFIX)</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>app.alextran.immich.background.refreshUpload</string>
-		<string>app.alextran.immich.background.processingUpload</string>
-		<string>app.alextran.immich.backgroundFetch</string>
-		<string>app.alextran.immich.backgroundProcessing</string>
+		<string>$(FORK_BUNDLE_PREFIX).background.refreshUpload</string>
+		<string>$(FORK_BUNDLE_PREFIX).background.processingUpload</string>
+		<string>$(FORK_BUNDLE_PREFIX).backgroundFetch</string>
+		<string>$(FORK_BUNDLE_PREFIX).backgroundProcessing</string>
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>

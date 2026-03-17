@@ -34,7 +34,11 @@ const int kTimelineAssetLoadBatchSize = 1024;
 const int kTimelineAssetLoadOppositeSize = 64;
 
 // Widget keys
-const String appShareGroupId = "group.app.immich.share";
+// Fork configuration — override via --dart-define or Fork.xcconfig
+const String _forkBundlePrefix = String.fromEnvironment('FORK_BUNDLE_PREFIX', defaultValue: 'app.alextran.immich');
+const String _forkAppGroup = String.fromEnvironment('FORK_APP_GROUP', defaultValue: 'group.app.immich.share');
+
+const String appShareGroupId = _forkAppGroup;
 const String kWidgetAuthToken = "widget_auth_token";
 const String kWidgetServerEndpoint = "widget_server_url";
 const String kWidgetCustomHeaders = "widget_custom_headers";
@@ -42,9 +46,9 @@ const String kWidgetCustomHeaders = "widget_custom_headers";
 // add widget identifiers here for new widgets
 // these are used to force a widget refresh
 // (iOSName, androidFQDN)
-const List<(String, String)> kWidgetNames = [
-  ('com.immich.widget.random', 'app.alextran.immich.widget.RandomReceiver'),
-  ('com.immich.widget.memory', 'app.alextran.immich.widget.MemoryReceiver'),
+List<(String, String)> get kWidgetNames => [
+  ('com.immich.widget.random', '$_forkBundlePrefix.widget.RandomReceiver'),
+  ('com.immich.widget.memory', '$_forkBundlePrefix.widget.MemoryReceiver'),
 ];
 
 const double kUploadStatusFailed = -1.0;
