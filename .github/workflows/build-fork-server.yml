@@ -4,19 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches:
+      - merged/deploy
       - feat/integrated-editor
-    paths:
-      - 'server/**'
-      - 'web/**'
-      - 'open-api/**'
-      - 'i18n/**'
-      - 'cli/**'
-      - 'plugins/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'pnpm-workspace.yaml'
-      - '.pnpmfile.cjs'
-      - '.github/workflows/build-fork-server.yml'
 
 env:
   REGISTRY: ghcr.io
