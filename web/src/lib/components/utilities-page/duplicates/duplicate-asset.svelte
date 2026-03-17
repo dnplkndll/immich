@@ -18,9 +18,6 @@
     mdiImageOutline,
     mdiMagnifyPlus,
     mdiMapMarkerOutline,
-    mdiMotionPlayOutline,
-    mdiPalette,
-    mdiContrastCircle,
   } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import InfoRow from './info-row.svelte';
@@ -83,9 +80,6 @@
     location: isDifferent(
       (a) => [a.exifInfo?.city, a.exifInfo?.state, a.exifInfo?.country].filter(Boolean).join(', ') || 'unknown',
     ),
-    livePhoto: isDifferent((a) => (a.livePhotoVideoId ? 'yes' : 'no')),
-    bitDepth: isDifferent((a) => String(a.exifInfo?.bitsPerSample ?? '')),
-    colorProfile: isDifferent((a) => a.exifInfo?.profileDescription ?? ''),
   });
 
   const getBasePath = (fullpath: string, fileName: string): string => {
@@ -197,24 +191,6 @@
     <InfoRow icon={mdiFitToScreen} highlight={hasDifferentValues.resolution} title={$t('resolution')}>
       {getAssetResolution(asset)}
     </InfoRow>
-
-    {#if asset.livePhotoVideoId || hasDifferentValues.livePhoto}
-      <InfoRow icon={mdiMotionPlayOutline} highlight={hasDifferentValues.livePhoto} title="Live Photo">
-        Live Photo
-      </InfoRow>
-    {/if}
-
-    {#if hasDifferentValues.bitDepth}
-      <InfoRow icon={mdiContrastCircle} highlight={hasDifferentValues.bitDepth} title="Bit depth">
-        {asset.exifInfo?.bitsPerSample ? `${asset.exifInfo.bitsPerSample}-bit depth` : $t('unknown')}
-      </InfoRow>
-    {/if}
-
-    {#if hasDifferentValues.colorProfile}
-      <InfoRow icon={mdiPalette} highlight={hasDifferentValues.colorProfile} title="Color profile">
-        {asset.exifInfo?.profileDescription ?? $t('unknown')}
-      </InfoRow>
-    {/if}
 
     <InfoRow icon={mdiCalendar} highlight={hasDifferentValues.date} title={$t('date')}>
       {#if dateTime}
