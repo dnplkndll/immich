@@ -245,20 +245,17 @@ end
   lane :fork_testflight do
     fork_team_id = "6ZJTLNKLQR"
     fork_bundle_id = "com.donkendall.immich"
-    fork_code_sign_identity = "Apple Distribution: Donald Kendall (#{fork_team_id})"
+    fork_code_sign_identity = "iPhone Distribution: don kendall (#{fork_team_id})"
+
+    # Profile names from the pre-installed provisioning profiles (installed by CI workflow)
+    # UUIDs: main=d5dc9abf, share=d6e3efc1, widget=cf075a01
+    main_profile_name   = "#{fork_bundle_id} AppStore"
+    share_profile_name  = "#{fork_bundle_id}.ShareExtension AppStore"
+    widget_profile_name = "#{fork_bundle_id}.Widget AppStore"
 
     api_key = get_api_key
 
-    sigh(api_key: api_key, app_identifier: fork_bundle_id, team_id: fork_team_id, force: true)
-    main_profile_name = lane_context[SharedValues::SIGH_NAME]
-
-    sigh(api_key: api_key, app_identifier: "#{fork_bundle_id}.ShareExtension", team_id: fork_team_id, force: true)
-    share_profile_name = lane_context[SharedValues::SIGH_NAME]
-
-    sigh(api_key: api_key, app_identifier: "#{fork_bundle_id}.Widget", team_id: fork_team_id, force: true)
-    widget_profile_name = lane_context[SharedValues::SIGH_NAME]
-
-    # Configure code signing for all targets
+    # Configure code signing for all targets using pre-installed profiles
     [
       { target: "Runner",          bundle: fork_bundle_id,                          profile: main_profile_name },
       { target: "ShareExtension",  bundle: "#{fork_bundle_id}.ShareExtension",      profile: share_profile_name },
