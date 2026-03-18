@@ -34,6 +34,18 @@ jobs:
           p12-password: ${{ secrets.IOS_DISTRIBUTION_CERT_PASSWORD }}
           keychain-password: ${{ secrets.KEYCHAIN_PASSWORD }}
 
+      - name: Install provisioning profiles
+        run: |
+          PP_DIR=~/Library/MobileDevice/Provisioning\ Profiles
+          mkdir -p "$PP_DIR"
+          echo "$IOS_PROVISION_PROFILE_MAIN"  | base64 --decode > "$PP_DIR/com.donkendall.immich.mobileprovision"
+          echo "$IOS_PROVISION_PROFILE_SHARE" | base64 --decode > "$PP_DIR/com.donkendall.immich.ShareExtension.mobileprovision"
+          echo "$IOS_PROVISION_PROFILE_WIDGET"| base64 --decode > "$PP_DIR/com.donkendall.immich.Widget.mobileprovision"
+        env:
+          IOS_PROVISION_PROFILE_MAIN:   ${{ secrets.IOS_PROVISION_PROFILE_MAIN }}
+          IOS_PROVISION_PROFILE_SHARE:  ${{ secrets.IOS_PROVISION_PROFILE_SHARE }}
+          IOS_PROVISION_PROFILE_WIDGET: ${{ secrets.IOS_PROVISION_PROFILE_WIDGET }}
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -48,7 +60,6 @@ jobs:
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
         run: |
-          # Write ASC private key to expected location
           mkdir -p ~/.appstoreconnect/private_keys
           echo "$APP_STORE_CONNECT_API_KEY_P8" > ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8
           bundle exec fastlane fork_testflight
