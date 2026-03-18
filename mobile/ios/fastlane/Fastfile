@@ -286,7 +286,7 @@ end
       workspace: "Runner.xcworkspace",
       configuration: "Release",
       export_method: "app-store",
-      xcargs: "-skipMacroValidation -allowProvisioningUpdates CODE_SIGN_IDENTITY='#{fork_code_sign_identity}' CODE_SIGN_STYLE=Manual",
+      xcargs: "-skipMacroValidation -allowProvisioningUpdates CODE_SIGN_IDENTITY='#{fork_code_sign_identity}' CODE_SIGN_STYLE=Manual CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION=YES",
       export_options: {
         provisioningProfiles: {
           fork_bundle_id                         => main_profile_name,
