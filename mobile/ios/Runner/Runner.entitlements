@@ -10,7 +10,7 @@
 	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.app.immich.share</string>
+		<string>$(FORK_APP_GROUP)</string>
 	</array>
 </dict>
 </plist>
