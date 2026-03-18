@@ -53,6 +53,10 @@ jobs:
           bundler-cache: true
           working-directory: mobile/ios
 
+      - name: Install CocoaPods dependencies
+        working-directory: mobile/ios
+        run: pod install
+
       - name: Build and upload to TestFlight
         working-directory: mobile/ios
         env:
