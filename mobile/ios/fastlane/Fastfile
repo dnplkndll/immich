@@ -241,6 +241,72 @@ end
     )
   end
 
+  desc "Fork TestFlight build using fork bundle ID and Apple Developer account"
+  lane :fork_testflight do
+    fork_team_id = "6ZJTLNKLQR"
+    fork_bundle_id = "com.donkendall.immich"
+    fork_code_sign_identity = "iPhone Distribution: don kendall (#{fork_team_id})"
+
+    # Profile names from the pre-installed provisioning profiles (installed by CI workflow)
+    # UUIDs: main=d5dc9abf, share=d6e3efc1, widget=cf075a01
+    main_profile_name   = "#{fork_bundle_id} AppStore"
+    share_profile_name  = "#{fork_bundle_id}.ShareExtension AppStore"
+    widget_profile_name = "#{fork_bundle_id}.Widget AppStore"
+
+    api_key = get_api_key
+
+    # Configure code signing for all targets using pre-installed profiles
+    [
+      { target: "Runner",          bundle: fork_bundle_id,                          profile: main_profile_name },
+      { target: "ShareExtension",  bundle: "#{fork_bundle_id}.ShareExtension",      profile: share_profile_name },
+      { target: "WidgetExtension", bundle: "#{fork_bundle_id}.Widget",              profile: widget_profile_name },
+    ].each do |t|
+      update_code_signing_settings(
+        use_automatic_signing: false,
+        path: "./Runner.xcodeproj",
+        team_id: fork_team_id,
+        code_sign_identity: fork_code_sign_identity,
+        bundle_identifier: t[:bundle],
+        profile_name: t[:profile],
+        targets: [t[:target]]
+      )
+    end
+
+    increment_build_number(
+      build_number: latest_testflight_build_number(
+        api_key: api_key,
+        app_identifier: fork_bundle_id,
+        team_id: fork_team_id
+      ) + 1,
+      xcodeproj: "./Runner.xcodeproj"
+    )
+
+    build_app(
+      scheme: "Runner",
+      workspace: "Runner.xcworkspace",
+      configuration: "Release",
+      export_method: "app-store",
+      xcargs: "-skipMacroValidation -allowProvisioningUpdates CODE_SIGN_IDENTITY='#{fork_code_sign_identity}' CODE_SIGN_STYLE=Manual CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION=YES",
+      export_options: {
+        provisioningProfiles: {
+          fork_bundle_id                         => main_profile_name,
+          "#{fork_bundle_id}.ShareExtension"    => share_profile_name,
+          "#{fork_bundle_id}.Widget"             => widget_profile_name,
+        },
+        signingStyle: "manual",
+        signingCertificate: fork_code_sign_identity,
+        teamID: fork_team_id,
+      }
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      app_identifier: fork_bundle_id,
+      skip_waiting_for_build_processing: true,
+      distribute_external: false
+    )
+  end
+
   desc "iOS Build Only (no TestFlight upload)"
   lane :gha_build_only do
     # Use the same build process as production, just skip the upload
