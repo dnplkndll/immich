@@ -2,7 +2,7 @@ import SwiftUI
 import WidgetKit
 
 @main
-struct ImmichWatchExtensionBundle: WidgetBundle {
+struct WatchBundle: WidgetBundle {
   var body: some Widget {
     ImmichWatchComplication()
   }
