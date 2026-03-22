@@ -1,10 +1,13 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/album/local_album.model.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/infrastructure/entities/local_asset.entity.dart';
+import 'package:immich_mobile/infrastructure/entities/local_asset.entity.drift.dart';
 import 'package:immich_mobile/infrastructure/repositories/db.repository.dart';
 import 'package:immich_mobile/providers/infrastructure/db.provider.dart';
 
@@ -41,7 +44,7 @@ class DriftBackupRepository extends DriftDatabaseRepository {
         SELECT
         COUNT(*) AS total_count,
         COUNT(*) FILTER (WHERE lae.checksum IS NULL) AS processing_count,
-        COUNT(*) FILTER (WHERE rae.id IS NULL) AS remainder_count
+        COUNT(*) FILTER (WHERE rae.id IS NULL AND lae.checksum IS NOT ?4) AS remainder_count
         FROM local_asset_entity lae
         LEFT JOIN main.remote_asset_entity rae
             ON lae.checksum = rae.checksum AND rae.owner_id = ?1
@@ -68,6 +71,7 @@ class DriftBackupRepository extends DriftDatabaseRepository {
             Variable.withString(userId),
             Variable.withInt(BackupSelection.selected.index),
             Variable.withInt(BackupSelection.excluded.index),
+            Variable.withString(kServerConfirmedChecksum),
           ],
           readsFrom: {_db.localAlbumAssetEntity, _db.localAlbumEntity, _db.localAssetEntity, _db.remoteAssetEntity},
         )
@@ -112,6 +116,61 @@ class DriftBackupRepository extends DriftDatabaseRepository {
       query.where((lae) => lae.checksum.isNotNull());
     }
 
+    // Exclude sentinel-checksum assets (already confirmed on server).
+    // Use isNull() | isNotValue() because NULL != value is NULL (falsy) in SQL.
+    query.where((lae) => lae.checksum.isNull() | lae.checksum.isNotValue(kServerConfirmedChecksum));
+
     return query.map((localAsset) => localAsset.toDto()).get();
+  }
+
+  /// Returns IDs of all unhashed assets in selected (non-excluded) backup albums.
+  Future<List<String>> getUnhashedBackupAssetIds() async {
+    const sql = '''
+        SELECT DISTINCT lae.id
+        FROM local_asset_entity lae
+        WHERE lae.checksum IS NULL
+        AND EXISTS (
+            SELECT 1
+            FROM local_album_asset_entity laa
+            INNER JOIN main.local_album_entity la ON laa.album_id = la.id
+            WHERE laa.asset_id = lae.id
+                AND la.backup_selection = ?1
+        )
+        AND NOT EXISTS (
+            SELECT 1
+            FROM local_album_asset_entity laa
+            INNER JOIN main.local_album_entity la ON laa.album_id = la.id
+            WHERE laa.asset_id = lae.id
+                AND la.backup_selection = ?2
+        );
+      ''';
+
+    final rows = await _db
+        .customSelect(
+          sql,
+          variables: [
+            Variable.withInt(BackupSelection.selected.index),
+            Variable.withInt(BackupSelection.excluded.index),
+          ],
+          readsFrom: {_db.localAlbumAssetEntity, _db.localAlbumEntity, _db.localAssetEntity},
+        )
+        .get();
+
+    return rows.map((row) => row.data['id'] as String).toList();
+  }
+
+  /// Batch-updates checksums to the sentinel value for assets confirmed on server.
+  Future<void> markAsServerConfirmed(List<String> assetIds) async {
+    if (assetIds.isEmpty) return;
+
+    await _db.batch((batch) {
+      for (final slice in assetIds.slices(kDriftMaxChunk)) {
+        batch.update(
+          _db.localAssetEntity,
+          const LocalAssetEntityCompanion(checksum: Value(kServerConfirmedChecksum)),
+          where: ($LocalAssetEntityTable lae) => lae.id.isIn(slice),
+        );
+      }
+    });
   }
 }
