@@ -162,6 +162,53 @@ class DriftBackupRepository extends DriftDatabaseRepository {
   /// Returns metadata for backup assets not yet confirmed on server.
   /// Includes both unhashed (NULL checksum) and hashed-but-unmatched assets,
   /// excluding sentinel-marked assets (already confirmed by Phase 1).
+  Future<List<({String id, String name, DateTime createdAt, int width, int height})>> getUnmatchedBackupAssetMetadata(String userId) async {
+    const sql = '''
+        SELECT DISTINCT lae.id, lae.name, lae.created_at, lae.width, lae.height
+        FROM local_asset_entity lae
+        LEFT JOIN main.remote_asset_entity rae
+            ON lae.checksum = rae.checksum AND rae.owner_id = ?3
+        WHERE (lae.checksum IS NULL OR (rae.id IS NULL AND lae.checksum IS NOT ?4))
+        AND EXISTS (
+            SELECT 1
+            FROM local_album_asset_entity laa
+            INNER JOIN main.local_album_entity la ON laa.album_id = la.id
+            WHERE laa.asset_id = lae.id
+                AND la.backup_selection = ?1
+        )
+        AND NOT EXISTS (
+            SELECT 1
+            FROM local_album_asset_entity laa
+            INNER JOIN main.local_album_entity la ON laa.album_id = la.id
+            WHERE laa.asset_id = lae.id
+                AND la.backup_selection = ?2
+        );
+      ''';
+
+    final rows = await _db
+        .customSelect(
+          sql,
+          variables: [
+            Variable.withInt(BackupSelection.selected.index),
+            Variable.withInt(BackupSelection.excluded.index),
+            Variable.withString(userId),
+            Variable.withString(kServerConfirmedChecksum),
+          ],
+          readsFrom: {_db.localAlbumAssetEntity, _db.localAlbumEntity, _db.localAssetEntity, _db.remoteAssetEntity},
+        )
+        .get();
+
+    return rows
+        .map((row) => (
+              id: row.data['id'] as String,
+              name: row.data['name'] as String,
+              createdAt: DateTime.parse(row.data['created_at'] as String),
+              width: (row.data['width'] as int?) ?? 0,
+              height: (row.data['height'] as int?) ?? 0,
+            ))
+        .toList();
+  }
+
   /// Batch-updates checksums to the sentinel value for assets confirmed on server.
   /// If [remoteIdMap] is provided, also stores the server asset UUID for each asset.
   Future<void> markAsServerConfirmed(

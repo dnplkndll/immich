@@ -477,6 +477,47 @@ export class AssetRepository {
     return assets.map((asset) => ({ deviceAssetId: asset.deviceAssetId, id: asset.id }));
   }
 
+  async getByMetadata(
+    ownerId: string,
+    items: Array<{ localId: string; fileCreatedAt: Date; width: number; height: number }>,
+  ): Promise<Array<{ localId: string; id: string }>> {
+    const results: Array<{ localId: string; id: string }> = [];
+
+    for (const item of items) {
+      // Match by EXIF dateTimeOriginal ±2s + dimensions.
+      // dateTimeOriginal is the reliable cross-device date (from EXIF metadata),
+      // unlike fileCreatedAt which can differ between CLI uploads and mobile.
+      // Dimensions distinguish burst shots taken at the same second.
+      const dateLow = new Date(item.fileCreatedAt.getTime() - 2000);
+      const dateHigh = new Date(item.fileCreatedAt.getTime() + 2000);
+
+      // Use orientation-agnostic dimension matching: iOS reports portrait as
+      // WxH (3024x4032) but EXIF stores landscape (4032x3024) with rotation flag
+      const shortSide = Math.min(item.width, item.height);
+      const longSide = Math.max(item.width, item.height);
+
+      const match = await this.db
+        .selectFrom('asset')
+        .innerJoin('asset_exif', 'asset.id', 'asset_exif.assetId')
+        .select(['asset.id'])
+        .where('asset.ownerId', '=', asUuid(ownerId))
+        .where('asset_exif.dateTimeOriginal', '>=', dateLow)
+        .where('asset_exif.dateTimeOriginal', '<=', dateHigh)
+        .where(sql<boolean>`LEAST("asset_exif"."exifImageWidth", "asset_exif"."exifImageHeight") = ${shortSide}`)
+        .where(sql<boolean>`GREATEST("asset_exif"."exifImageWidth", "asset_exif"."exifImageHeight") = ${longSide}`)
+        .where('asset.deletedAt', 'is', null)
+        .orderBy('asset.id')
+        .limit(1)
+        .executeTakeFirst();
+
+      if (match) {
+        results.push({ localId: item.localId, id: match.id });
+      }
+    }
+
+    return results;
+  }
+
   @GenerateSql({ params: [DummyValue.UUID, DummyValue.STRING] })
   getByLibraryIdAndOriginalPath(libraryId: string, originalPath: string) {
     return this.db

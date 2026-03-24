@@ -22,6 +22,7 @@ import {
   AssetBulkUploadCheckResponseDto,
   AssetMediaResponseDto,
   AssetMediaStatus,
+  CheckExistingAssetsByMetadataResponseDto,
   CheckExistingAssetsResponseDto,
 } from 'src/dtos/asset-media-response.dto';
 import {
@@ -30,6 +31,7 @@ import {
   AssetMediaOptionsDto,
   AssetMediaReplaceDto,
   AssetMediaSize,
+  CheckExistingAssetsByMetadataDto,
   CheckExistingAssetsDto,
   UploadFieldName,
 } from 'src/dtos/asset-media.dto';
@@ -215,6 +217,22 @@ export class AssetMediaController {
     @Body() dto: CheckExistingAssetsDto,
   ): Promise<CheckExistingAssetsResponseDto> {
     return this.service.checkExistingAssets(auth, dto);
+  }
+
+  @Post('exist/metadata')
+  @Authenticated({ permission: Permission.AssetUpload })
+  @Endpoint({
+    summary: 'Check existing assets by metadata',
+    description:
+      'Checks if assets exist on the server by matching original filename, file size, and creation date. Used as a fallback when device asset IDs do not match (e.g., app reinstall or new device).',
+    history: new HistoryBuilder().added('v1').beta('v1'),
+  })
+  @HttpCode(HttpStatus.OK)
+  checkExistingAssetsByMetadata(
+    @Auth() auth: AuthDto,
+    @Body() dto: CheckExistingAssetsByMetadataDto,
+  ): Promise<CheckExistingAssetsByMetadataResponseDto> {
+    return this.service.checkExistingAssetsByMetadata(auth, dto);
   }
 
   @Post('bulk-upload-check')

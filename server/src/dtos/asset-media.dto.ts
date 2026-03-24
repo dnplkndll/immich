@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { plainToInstance, Transform, Type } from 'class-transformer';
-import { ArrayNotEmpty, IsArray, IsNotEmpty, IsString, ValidateNested } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsInt, IsNotEmpty, IsPositive, IsString, ValidateNested } from 'class-validator';
 import { AssetMetadataUpsertItemDto } from 'src/dtos/asset.dto';
 import { AssetVisibility } from 'src/enum';
 import { Optional, ValidateBoolean, ValidateDate, ValidateEnum, ValidateUUID } from 'src/validation';
@@ -125,4 +125,32 @@ export class CheckExistingAssetsDto {
   @ApiProperty({ description: 'Device ID' })
   @IsNotEmpty()
   deviceId!: string;
+}
+
+export class CheckExistingAssetsByMetadataItem {
+  @ApiProperty({ description: 'Local asset ID (client-side identifier)' })
+  @IsString()
+  @IsNotEmpty()
+  localId!: string;
+
+  @ValidateDate({ description: 'File creation date (from EXIF or photo library)' })
+  fileCreatedAt!: Date;
+
+  @ApiProperty({ description: 'Image/video width in pixels' })
+  @IsInt()
+  @IsPositive()
+  width!: number;
+
+  @ApiProperty({ description: 'Image/video height in pixels' })
+  @IsInt()
+  @IsPositive()
+  height!: number;
+}
+
+export class CheckExistingAssetsByMetadataDto {
+  @ApiProperty({ description: 'Assets to check by metadata' })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CheckExistingAssetsByMetadataItem)
+  assets!: CheckExistingAssetsByMetadataItem[];
 }

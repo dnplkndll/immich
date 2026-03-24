@@ -52,3 +52,12 @@ export class CheckExistingAssetsResponseDto {
   })
   existingIdMap?: Record<string, string>;
 }
+
+export class CheckExistingAssetsByMetadataResponseDto {
+  @ApiProperty({
+    description: 'Map of local asset ID to server asset UUID for matched assets',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+  })
+  existingIdMap!: Record<string, string>;
+}

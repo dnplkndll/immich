@@ -361,6 +361,75 @@ void main() {
     });
   });
 
+  group('getUnmatchedBackupAssetMetadata', () {
+    late String userId;
+
+    setUp(() async {
+      final user = await ctx.newUser();
+      userId = user.id;
+    });
+
+    test('returns empty list when no assets', () async {
+      final result = await sut.getUnmatchedBackupAssetMetadata(userId);
+      expect(result, isEmpty);
+    });
+
+    test('returns unhashed assets with dimensions in selected albums', () async {
+      final album = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+      final createdAt = DateTime.utc(2024, 6, 15, 12, 30);
+      final asset = await ctx.newLocalAsset(
+        checksumOption: const Option.none(),
+        name: 'IMG_1234.jpg',
+        createdAt: createdAt,
+        width: 4032,
+        height: 3024,
+      );
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: asset.id);
+
+      final result = await sut.getUnmatchedBackupAssetMetadata(userId);
+      expect(result.length, 1);
+      expect(result.first.id, asset.id);
+      expect(result.first.createdAt, createdAt);
+      expect(result.first.width, 4032);
+      expect(result.first.height, 3024);
+    });
+
+    test('includes hashed assets not on server', () async {
+      final album = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+      final hashed = await ctx.newLocalAsset();
+      final unhashed = await ctx.newLocalAsset(checksumOption: const Option.none());
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: hashed.id);
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: unhashed.id);
+
+      final result = await sut.getUnmatchedBackupAssetMetadata(userId);
+      expect(result.length, 2); // both unhashed AND hashed-but-not-on-server
+    });
+
+    test('excludes hashed assets that exist on server', () async {
+      final album = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+      final remote = await ctx.newRemoteAsset(ownerId: userId);
+      final matched = await ctx.newLocalAsset(checksum: remote.checksum);
+      final unmatched = await ctx.newLocalAsset();
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: matched.id);
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: unmatched.id);
+
+      final result = await sut.getUnmatchedBackupAssetMetadata(userId);
+      expect(result.length, 1);
+      expect(result.first.id, unmatched.id);
+    });
+
+    test('excludes sentinel-marked assets', () async {
+      final album = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+      final sentinel = await ctx.newLocalAsset(checksum: kServerConfirmedChecksum);
+      final unmatched = await ctx.newLocalAsset();
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: sentinel.id);
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: unmatched.id);
+
+      final result = await sut.getUnmatchedBackupAssetMetadata(userId);
+      expect(result.length, 1);
+      expect(result.first.id, unmatched.id);
+    });
+  });
 
   group('markAsServerConfirmed', () {
     test('does nothing for empty list', () async {

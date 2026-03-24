@@ -1,0 +1,131 @@
+//
+// AUTO-GENERATED FILE, DO NOT MODIFY!
+//
+// @dart=2.18
+
+// ignore_for_file: unused_element, unused_import
+// ignore_for_file: always_put_required_named_parameters_first
+// ignore_for_file: constant_identifier_names
+// ignore_for_file: lines_longer_than_80_chars
+
+part of openapi.api;
+
+class CheckExistingAssetsByMetadataItem {
+  /// Returns a new [CheckExistingAssetsByMetadataItem] instance.
+  CheckExistingAssetsByMetadataItem({
+    required this.fileCreatedAt,
+    required this.height,
+    required this.localId,
+    required this.width,
+  });
+
+  /// File creation date (from EXIF or photo library)
+  DateTime fileCreatedAt;
+
+  /// Image/video height in pixels
+  ///
+  /// Minimum value: 1
+  num height;
+
+  /// Local asset ID (client-side identifier)
+  String localId;
+
+  /// Image/video width in pixels
+  ///
+  /// Minimum value: 1
+  num width;
+
+  @override
+  bool operator ==(Object other) => identical(this, other) || other is CheckExistingAssetsByMetadataItem &&
+    other.fileCreatedAt == fileCreatedAt &&
+    other.height == height &&
+    other.localId == localId &&
+    other.width == width;
+
+  @override
+  int get hashCode =>
+    // ignore: unnecessary_parenthesis
+    (fileCreatedAt.hashCode) +
+    (height.hashCode) +
+    (localId.hashCode) +
+    (width.hashCode);
+
+  @override
+  String toString() => 'CheckExistingAssetsByMetadataItem[fileCreatedAt=$fileCreatedAt, height=$height, localId=$localId, width=$width]';
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{};
+      json[r'fileCreatedAt'] = this.fileCreatedAt.toUtc().toIso8601String();
+      json[r'height'] = this.height;
+      json[r'localId'] = this.localId;
+      json[r'width'] = this.width;
+    return json;
+  }
+
+  /// Returns a new [CheckExistingAssetsByMetadataItem] instance and imports its values from
+  /// [value] if it's a [Map], null otherwise.
+  // ignore: prefer_constructors_over_static_methods
+  static CheckExistingAssetsByMetadataItem? fromJson(dynamic value) {
+    upgradeDto(value, "CheckExistingAssetsByMetadataItem");
+    if (value is Map) {
+      final json = value.cast<String, dynamic>();
+
+      return CheckExistingAssetsByMetadataItem(
+        fileCreatedAt: mapDateTime(json, r'fileCreatedAt', r'')!,
+        height: num.parse('${json[r'height']}'),
+        localId: mapValueOfType<String>(json, r'localId')!,
+        width: num.parse('${json[r'width']}'),
+      );
+    }
+    return null;
+  }
+
+  static List<CheckExistingAssetsByMetadataItem> listFromJson(dynamic json, {bool growable = false,}) {
+    final result = <CheckExistingAssetsByMetadataItem>[];
+    if (json is List && json.isNotEmpty) {
+      for (final row in json) {
+        final value = CheckExistingAssetsByMetadataItem.fromJson(row);
+        if (value != null) {
+          result.add(value);
+        }
+      }
+    }
+    return result.toList(growable: growable);
+  }
+
+  static Map<String, CheckExistingAssetsByMetadataItem> mapFromJson(dynamic json) {
+    final map = <String, CheckExistingAssetsByMetadataItem>{};
+    if (json is Map && json.isNotEmpty) {
+      json = json.cast<String, dynamic>(); // ignore: parameter_assignments
+      for (final entry in json.entries) {
+        final value = CheckExistingAssetsByMetadataItem.fromJson(entry.value);
+        if (value != null) {
+          map[entry.key] = value;
+        }
+      }
+    }
+    return map;
+  }
+
+  // maps a json object with a list of CheckExistingAssetsByMetadataItem-objects as value to a dart map
+  static Map<String, List<CheckExistingAssetsByMetadataItem>> mapListFromJson(dynamic json, {bool growable = false,}) {
+    final map = <String, List<CheckExistingAssetsByMetadataItem>>{};
+    if (json is Map && json.isNotEmpty) {
+      // ignore: parameter_assignments
+      json = json.cast<String, dynamic>();
+      for (final entry in json.entries) {
+        map[entry.key] = CheckExistingAssetsByMetadataItem.listFromJson(entry.value, growable: growable,);
+      }
+    }
+    return map;
+  }
+
+  /// The list of required keys that must be present in a JSON.
+  static const requiredKeys = <String>{
+    'fileCreatedAt',
+    'height',
+    'localId',
+    'width',
+  };
+}
+

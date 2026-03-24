@@ -3192,6 +3192,62 @@
         "x-immich-state": "Stable"
       }
     },
+    "/assets/exist/metadata": {
+      "post": {
+        "description": "Checks if assets exist on the server by matching original filename, file size, and creation date. Used as a fallback when device asset IDs do not match (e.g., app reinstall or new device).",
+        "operationId": "checkExistingAssetsByMetadata",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckExistingAssetsByMetadataDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckExistingAssetsByMetadataResponseDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "summary": "Check existing assets by metadata",
+        "tags": [
+          "Assets"
+        ],
+        "x-immich-history": [
+          {
+            "version": "v1",
+            "state": "Added"
+          },
+          {
+            "version": "v1",
+            "state": "Beta"
+          }
+        ],
+        "x-immich-permission": "asset.upload",
+        "x-immich-state": "Beta"
+      }
+    },
     "/assets/jobs": {
       "post": {
         "description": "Run a specific job on a set of assets.",
@@ -17480,6 +17536,66 @@
         "required": [
           "newPassword",
           "password"
+        ],
+        "type": "object"
+      },
+      "CheckExistingAssetsByMetadataDto": {
+        "properties": {
+          "assets": {
+            "description": "Assets to check by metadata",
+            "items": {
+              "$ref": "#/components/schemas/CheckExistingAssetsByMetadataItem"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "assets"
+        ],
+        "type": "object"
+      },
+      "CheckExistingAssetsByMetadataItem": {
+        "properties": {
+          "fileCreatedAt": {
+            "description": "File creation date (from EXIF or photo library)",
+            "format": "date-time",
+            "type": "string"
+          },
+          "height": {
+            "description": "Image/video height in pixels",
+            "minimum": 1,
+            "type": "number"
+          },
+          "localId": {
+            "description": "Local asset ID (client-side identifier)",
+            "type": "string"
+          },
+          "width": {
+            "description": "Image/video width in pixels",
+            "minimum": 1,
+            "type": "number"
+          }
+        },
+        "required": [
+          "fileCreatedAt",
+          "height",
+          "localId",
+          "width"
+        ],
+        "type": "object"
+      },
+      "CheckExistingAssetsByMetadataResponseDto": {
+        "properties": {
+          "existingIdMap": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Map of local asset ID to server asset UUID for matched assets",
+            "type": "object"
+          }
+        },
+        "required": [
+          "existingIdMap"
         ],
         "type": "object"
       },

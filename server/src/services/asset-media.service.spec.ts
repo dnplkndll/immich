@@ -758,6 +758,42 @@ describe(AssetMediaService.name, () => {
     });
   });
 
+  describe('checkExistingAssetsByMetadata', () => {
+    it('should return matching assets by EXIF date and dimensions', async () => {
+      mocks.asset.getByMetadata.mockResolvedValue([{ localId: 'local-1', id: 'server-uuid-1' }]);
+      const dto = {
+        assets: [{ localId: 'local-1', fileCreatedAt: new Date('2024-01-01'), width: 4032, height: 3024 }],
+      };
+
+      await expect(sut.checkExistingAssetsByMetadata(authStub.admin, dto)).resolves.toEqual({
+        existingIdMap: { 'local-1': 'server-uuid-1' },
+      });
+
+      expect(mocks.asset.getByMetadata).toHaveBeenCalledWith(userStub.admin.id, dto.assets);
+    });
+
+    it('should return empty map when no matches found', async () => {
+      mocks.asset.getByMetadata.mockResolvedValue([]);
+      const dto = {
+        assets: [{ localId: 'local-1', fileCreatedAt: new Date('2024-01-01'), width: 4032, height: 3024 }],
+      };
+
+      await expect(sut.checkExistingAssetsByMetadata(authStub.admin, dto)).resolves.toEqual({
+        existingIdMap: {},
+      });
+    });
+
+    it('should return empty map for empty assets array', async () => {
+      mocks.asset.getByMetadata.mockResolvedValue([]);
+
+      await expect(sut.checkExistingAssetsByMetadata(authStub.admin, { assets: [] })).resolves.toEqual({
+        existingIdMap: {},
+      });
+
+      expect(mocks.asset.getByMetadata).toHaveBeenCalledWith(userStub.admin.id, []);
+    });
+  });
+
   describe('bulkUploadCheck', () => {
     it('should accept hex and base64 checksums', async () => {
       const file1 = Buffer.from('d2947b871a706081be194569951b7db246907957', 'hex');

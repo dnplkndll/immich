@@ -330,6 +330,12 @@ class ApiClient {
           return CastUpdate.fromJson(value);
         case 'ChangePasswordDto':
           return ChangePasswordDto.fromJson(value);
+        case 'CheckExistingAssetsByMetadataDto':
+          return CheckExistingAssetsByMetadataDto.fromJson(value);
+        case 'CheckExistingAssetsByMetadataItem':
+          return CheckExistingAssetsByMetadataItem.fromJson(value);
+        case 'CheckExistingAssetsByMetadataResponseDto':
+          return CheckExistingAssetsByMetadataResponseDto.fromJson(value);
         case 'CheckExistingAssetsDto':
           return CheckExistingAssetsDto.fromJson(value);
         case 'CheckExistingAssetsResponseDto':
@@ -368,10 +374,6 @@ class ApiClient {
           return DownloadUpdate.fromJson(value);
         case 'DuplicateDetectionConfig':
           return DuplicateDetectionConfig.fromJson(value);
-        case 'DuplicateResolveDto':
-          return DuplicateResolveDto.fromJson(value);
-        case 'DuplicateResolveGroupDto':
-          return DuplicateResolveGroupDto.fromJson(value);
         case 'DuplicateResponseDto':
           return DuplicateResponseDto.fromJson(value);
         case 'EmailNotificationsResponse':
