@@ -1,7 +1,9 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/domain/services/hash.service.dart';
 import 'package:immich_mobile/domain/services/local_sync.service.dart';
+import 'package:immich_mobile/domain/services/server_existence_check.service.dart';
 import 'package:immich_mobile/domain/services/sync_stream.service.dart';
+import 'package:immich_mobile/infrastructure/repositories/backup.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/sync_api.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/sync_migration.repository.dart';
 import 'package:immich_mobile/infrastructure/repositories/sync_stream.repository.dart';
@@ -51,5 +53,12 @@ final hashServiceProvider = Provider(
     localAssetRepository: ref.watch(localAssetRepository),
     nativeSyncApi: ref.watch(nativeSyncApiProvider),
     trashedLocalAssetRepository: ref.watch(trashedLocalAssetRepository),
+  ),
+);
+
+final serverExistenceCheckServiceProvider = Provider(
+  (ref) => ServerExistenceCheckService(
+    backupRepository: ref.watch(backupRepositoryProvider),
+    apiService: ref.watch(apiServiceProvider),
   ),
 );

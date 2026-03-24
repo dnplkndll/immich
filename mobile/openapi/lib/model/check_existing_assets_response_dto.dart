@@ -13,26 +13,33 @@ part of openapi.api;
 class CheckExistingAssetsResponseDto {
   /// Returns a new [CheckExistingAssetsResponseDto] instance.
   CheckExistingAssetsResponseDto({
+    this.existingIdMap = const {},
     this.existingIds = const [],
   });
 
-  /// Existing asset IDs
+  /// Map of device asset ID to server asset UUID
+  Map<String, String> existingIdMap;
+
+  /// Existing asset IDs (device asset IDs)
   List<String> existingIds;
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is CheckExistingAssetsResponseDto &&
+    _deepEquality.equals(other.existingIdMap, existingIdMap) &&
     _deepEquality.equals(other.existingIds, existingIds);
 
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
+    (existingIdMap.hashCode) +
     (existingIds.hashCode);
 
   @override
-  String toString() => 'CheckExistingAssetsResponseDto[existingIds=$existingIds]';
+  String toString() => 'CheckExistingAssetsResponseDto[existingIdMap=$existingIdMap, existingIds=$existingIds]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
+      json[r'existingIdMap'] = this.existingIdMap;
       json[r'existingIds'] = this.existingIds;
     return json;
   }
@@ -46,6 +53,7 @@ class CheckExistingAssetsResponseDto {
       final json = value.cast<String, dynamic>();
 
       return CheckExistingAssetsResponseDto(
+        existingIdMap: mapCastOfType<String, String>(json, r'existingIdMap') ?? const {},
         existingIds: json[r'existingIds'] is Iterable
             ? (json[r'existingIds'] as Iterable).cast<String>().toList(growable: false)
             : const [],

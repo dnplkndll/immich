@@ -289,12 +289,15 @@ export class AssetMediaService extends BaseService {
     auth: AuthDto,
     checkExistingAssetsDto: CheckExistingAssetsDto,
   ): Promise<CheckExistingAssetsResponseDto> {
-    const existingIds = await this.assetRepository.getByDeviceIds(
+    const results = await this.assetRepository.getByDeviceIds(
       auth.user.id,
       checkExistingAssetsDto.deviceId,
       checkExistingAssetsDto.deviceAssetIds,
     );
-    return { existingIds };
+    return {
+      existingIds: results.map((r) => r.deviceAssetId),
+      existingIdMap: Object.fromEntries(results.map((r) => [r.deviceAssetId, r.id])),
+    };
   }
 
   async bulkUploadCheck(auth: AuthDto, dto: AssetBulkUploadCheckDto): Promise<AssetBulkUploadCheckResponseDto> {

@@ -749,10 +749,10 @@ describe(AssetMediaService.name, () => {
 
   describe('checkExistingAssets', () => {
     it('should get existing asset ids', async () => {
-      mocks.asset.getByDeviceIds.mockResolvedValue(['42']);
+      mocks.asset.getByDeviceIds.mockResolvedValue([{ deviceAssetId: '42', id: 'server-uuid-1' }]);
       await expect(
         sut.checkExistingAssets(authStub.admin, { deviceId: '420', deviceAssetIds: ['69'] }),
-      ).resolves.toEqual({ existingIds: ['42'] });
+      ).resolves.toEqual({ existingIds: ['42'], existingIdMap: { '42': 'server-uuid-1' } });
 
       expect(mocks.asset.getByDeviceIds).toHaveBeenCalledWith(userStub.admin.id, '420', ['69']);
     });

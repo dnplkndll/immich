@@ -144,7 +144,10 @@ class BackgroundSyncManager {
     onHashingStart?.call();
 
     _hashTask = runInIsolateGentle(
-      computation: (ref) => ref.read(hashServiceProvider).hashAssets(),
+      computation: (ref) async {
+        await ref.read(serverExistenceCheckServiceProvider).checkAndMarkExistingAssets();
+        await ref.read(hashServiceProvider).hashAssets();
+      },
       debugLabel: 'hash-assets',
     );
 

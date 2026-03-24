@@ -1,10 +1,13 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/album/local_album.model.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/infrastructure/entities/local_asset.entity.dart';
+import 'package:immich_mobile/infrastructure/entities/local_asset.entity.drift.dart';
 import 'package:immich_mobile/infrastructure/repositories/db.repository.dart';
 import 'package:immich_mobile/providers/infrastructure/db.provider.dart';
 
@@ -41,7 +44,7 @@ class DriftBackupRepository extends DriftDatabaseRepository {
         SELECT
         COUNT(*) AS total_count,
         COUNT(*) FILTER (WHERE lae.checksum IS NULL) AS processing_count,
-        COUNT(*) FILTER (WHERE rae.id IS NULL) AS remainder_count
+        COUNT(*) FILTER (WHERE rae.id IS NULL AND lae.checksum IS NOT ?4) AS remainder_count
         FROM local_asset_entity lae
         LEFT JOIN main.remote_asset_entity rae
             ON lae.checksum = rae.checksum AND rae.owner_id = ?1
@@ -68,6 +71,7 @@ class DriftBackupRepository extends DriftDatabaseRepository {
             Variable.withString(userId),
             Variable.withInt(BackupSelection.selected.index),
             Variable.withInt(BackupSelection.excluded.index),
+            Variable.withString(kServerConfirmedChecksum),
           ],
           readsFrom: {_db.localAlbumAssetEntity, _db.localAlbumEntity, _db.localAssetEntity, _db.remoteAssetEntity},
         )
@@ -112,6 +116,89 @@ class DriftBackupRepository extends DriftDatabaseRepository {
       query.where((lae) => lae.checksum.isNotNull());
     }
 
+    // Exclude sentinel-checksum assets (already confirmed on server).
+    // Use isNull() | isNotValue() because NULL != value is NULL (falsy) in SQL.
+    query.where((lae) => lae.checksum.isNull() | lae.checksum.isNotValue(kServerConfirmedChecksum));
+
     return query.map((localAsset) => localAsset.toDto()).get();
+  }
+
+  /// Returns IDs of all unhashed assets in selected (non-excluded) backup albums.
+  Future<List<String>> getUnhashedBackupAssetIds() async {
+    const sql = '''
+        SELECT DISTINCT lae.id
+        FROM local_asset_entity lae
+        WHERE lae.checksum IS NULL
+        AND EXISTS (
+            SELECT 1
+            FROM local_album_asset_entity laa
+            INNER JOIN main.local_album_entity la ON laa.album_id = la.id
+            WHERE laa.asset_id = lae.id
+                AND la.backup_selection = ?1
+        )
+        AND NOT EXISTS (
+            SELECT 1
+            FROM local_album_asset_entity laa
+            INNER JOIN main.local_album_entity la ON laa.album_id = la.id
+            WHERE laa.asset_id = lae.id
+                AND la.backup_selection = ?2
+        );
+      ''';
+
+    final rows = await _db
+        .customSelect(
+          sql,
+          variables: [
+            Variable.withInt(BackupSelection.selected.index),
+            Variable.withInt(BackupSelection.excluded.index),
+          ],
+          readsFrom: {_db.localAlbumAssetEntity, _db.localAlbumEntity, _db.localAssetEntity},
+        )
+        .get();
+
+    return rows.map((row) => row.data['id'] as String).toList();
+  }
+
+  /// Returns metadata for backup assets not yet confirmed on server.
+  /// Includes both unhashed (NULL checksum) and hashed-but-unmatched assets,
+  /// excluding sentinel-marked assets (already confirmed by Phase 1).
+  /// Batch-updates checksums to the sentinel value for assets confirmed on server.
+  /// If [remoteIdMap] is provided, also stores the server asset UUID for each asset.
+  Future<void> markAsServerConfirmed(
+    List<String> assetIds, {
+    Map<String, String> remoteIdMap = const {},
+  }) async {
+    if (assetIds.isEmpty) return;
+
+    await _db.batch((batch) {
+      for (final slice in assetIds.slices(kDriftMaxChunk)) {
+        if (remoteIdMap.isEmpty) {
+          batch.update(
+            _db.localAssetEntity,
+            const LocalAssetEntityCompanion(checksum: Value(kServerConfirmedChecksum)),
+            where: ($LocalAssetEntityTable lae) => lae.id.isIn(slice),
+          );
+        } else {
+          for (final id in slice) {
+            final remote = remoteIdMap[id];
+            batch.update(
+              _db.localAssetEntity,
+              LocalAssetEntityCompanion(
+                checksum: const Value(kServerConfirmedChecksum),
+                remoteId: remote != null ? Value(remote) : const Value.absent(),
+              ),
+              where: ($LocalAssetEntityTable lae) => lae.id.equals(id),
+            );
+          }
+        }
+      }
+    });
+  }
+
+  /// Stores the server asset UUID for a local asset after upload.
+  Future<void> storeRemoteId(String localAssetId, String remoteAssetId) async {
+    await (_db.update(_db.localAssetEntity)
+          ..where((lae) => lae.id.equals(localAssetId)))
+        .write(LocalAssetEntityCompanion(remoteId: Value(remoteAssetId)));
   }
 }

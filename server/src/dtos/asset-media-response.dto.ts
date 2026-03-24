@@ -42,6 +42,13 @@ export class AssetBulkUploadCheckResponseDto {
 }
 
 export class CheckExistingAssetsResponseDto {
-  @ApiProperty({ description: 'Existing asset IDs' })
+  @ApiProperty({ description: 'Existing asset IDs (device asset IDs)' })
   existingIds!: string[];
+
+  @ApiPropertyOptional({
+    description: 'Map of device asset ID to server asset UUID',
+    type: 'object',
+    additionalProperties: { type: 'string' },
+  })
+  existingIdMap?: Record<string, string>;
 }

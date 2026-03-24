@@ -17506,8 +17506,15 @@
       },
       "CheckExistingAssetsResponseDto": {
         "properties": {
+          "existingIdMap": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Map of device asset ID to server asset UUID",
+            "type": "object"
+          },
           "existingIds": {
-            "description": "Existing asset IDs",
+            "description": "Existing asset IDs (device asset IDs)",
             "items": {
               "type": "string"
             },

@@ -1,4 +1,6 @@
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/album/local_album.model.dart';
 import 'package:immich_mobile/infrastructure/repositories/backup.repository.dart';
 import 'package:immich_mobile/utils/option.dart';
@@ -135,6 +137,43 @@ void main() {
       expect(result.remainder, 2); // local2 + local3
       expect(result.processing, 1); // local3
     });
+
+    test('sentinel-checksum asset counts as total but not remainder or processing', () async {
+      final album = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+      final asset = await ctx.newLocalAsset(checksum: kServerConfirmedChecksum);
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: asset.id);
+
+      final result = await sut.getAllCounts(userId);
+      expect(result.total, 1);
+      expect(result.remainder, 0);
+      expect(result.processing, 0);
+    });
+
+    test('mixed assets with sentinel produce correct counts', () async {
+      final album = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+
+      // server-confirmed (sentinel)
+      final sentinel = await ctx.newLocalAsset(checksum: kServerConfirmedChecksum);
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: sentinel.id);
+
+      // truly backed up (matched remote)
+      final remote = await ctx.newRemoteAsset(ownerId: userId);
+      final backedUp = await ctx.newLocalAsset(checksum: remote.checksum);
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: backedUp.id);
+
+      // unhashed (processing)
+      final unhashed = await ctx.newLocalAsset(checksumOption: const Option.none());
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: unhashed.id);
+
+      // hashed but not on server
+      final newAsset = await ctx.newLocalAsset();
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: newAsset.id);
+
+      final result = await sut.getAllCounts(userId);
+      expect(result.total, 4);
+      expect(result.remainder, 2); // unhashed + newAsset
+      expect(result.processing, 1); // unhashed
+    });
   });
 
   group('getCandidates', () {
@@ -239,6 +278,208 @@ void main() {
       final result = await sut.getCandidates(userId);
       expect(result.length, 1);
       expect(result.first.id, asset.id);
+    });
+
+    test('excludes sentinel-checksum asset when onlyHashed is true', () async {
+      final album = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+      final asset = await ctx.newLocalAsset(checksum: kServerConfirmedChecksum);
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: asset.id);
+
+      final result = await sut.getCandidates(userId);
+      expect(result, isEmpty);
+    });
+
+    test('excludes sentinel-checksum asset when onlyHashed is false', () async {
+      final album = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+      final asset = await ctx.newLocalAsset(checksum: kServerConfirmedChecksum);
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: asset.id);
+
+      final result = await sut.getCandidates(userId, onlyHashed: false);
+      expect(result, isEmpty);
+    });
+
+    test('sentinel filter does not exclude null-checksum assets when onlyHashed is false', () async {
+      final album = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+      final nullAsset = await ctx.newLocalAsset(checksumOption: const Option.none());
+      final sentinelAsset = await ctx.newLocalAsset(checksum: kServerConfirmedChecksum);
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: nullAsset.id);
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: sentinelAsset.id);
+
+      final result = await sut.getCandidates(userId, onlyHashed: false);
+      expect(result.length, 1);
+      expect(result.first.id, nullAsset.id);
+    });
+  });
+
+  group('getUnhashedBackupAssetIds', () {
+    test('returns empty list when no albums exist', () async {
+      final result = await sut.getUnhashedBackupAssetIds();
+      expect(result, isEmpty);
+    });
+
+    test('returns only null-checksum assets in selected albums', () async {
+      final album = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+
+      final unhashed = await ctx.newLocalAsset(checksumOption: const Option.none());
+      final hashed = await ctx.newLocalAsset();
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: unhashed.id);
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: hashed.id);
+
+      final result = await sut.getUnhashedBackupAssetIds();
+      expect(result, [unhashed.id]);
+    });
+
+    test('excludes assets in non-selected albums', () async {
+      final noneAlbum = await ctx.newLocalAlbum(backupSelection: BackupSelection.none);
+      final asset = await ctx.newLocalAsset(checksumOption: const Option.none());
+      await ctx.newLocalAlbumAsset(albumId: noneAlbum.id, assetId: asset.id);
+
+      final result = await sut.getUnhashedBackupAssetIds();
+      expect(result, isEmpty);
+    });
+
+    test('excludes assets also in excluded albums', () async {
+      final selected = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+      final excluded = await ctx.newLocalAlbum(backupSelection: BackupSelection.excluded);
+      final asset = await ctx.newLocalAsset(checksumOption: const Option.none());
+      await ctx.newLocalAlbumAsset(albumId: selected.id, assetId: asset.id);
+      await ctx.newLocalAlbumAsset(albumId: excluded.id, assetId: asset.id);
+
+      final result = await sut.getUnhashedBackupAssetIds();
+      expect(result, isEmpty);
+    });
+
+    test('does not return duplicates for assets in multiple selected albums', () async {
+      final album1 = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+      final album2 = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+      final asset = await ctx.newLocalAsset(checksumOption: const Option.none());
+      await ctx.newLocalAlbumAsset(albumId: album1.id, assetId: asset.id);
+      await ctx.newLocalAlbumAsset(albumId: album2.id, assetId: asset.id);
+
+      final result = await sut.getUnhashedBackupAssetIds();
+      expect(result, [asset.id]);
+    });
+  });
+
+
+  group('markAsServerConfirmed', () {
+    test('does nothing for empty list', () async {
+      await sut.markAsServerConfirmed([]);
+      // No error thrown
+    });
+
+    test('sets sentinel checksum on specified assets', () async {
+      final album = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+      final asset1 = await ctx.newLocalAsset(checksumOption: const Option.none());
+      final asset2 = await ctx.newLocalAsset(checksumOption: const Option.none());
+      final asset3 = await ctx.newLocalAsset(checksumOption: const Option.none());
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: asset1.id);
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: asset2.id);
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: asset3.id);
+
+      // Mark only asset1 and asset2
+      await sut.markAsServerConfirmed([asset1.id, asset2.id]);
+
+      // asset3 should still be unhashed
+      final unhashed = await sut.getUnhashedBackupAssetIds();
+      expect(unhashed, [asset3.id]);
+
+      // Sentinel assets should not appear as candidates
+      final user = await ctx.newUser();
+      final candidates = await sut.getCandidates(user.id, onlyHashed: false);
+      expect(candidates.length, 1);
+      expect(candidates.first.id, asset3.id);
+    });
+
+    test('sentinel assets are excluded from getAllCounts remainder', () async {
+      final user = await ctx.newUser();
+      final album = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+      final asset1 = await ctx.newLocalAsset(checksumOption: const Option.none());
+      final asset2 = await ctx.newLocalAsset(checksumOption: const Option.none());
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: asset1.id);
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: asset2.id);
+
+      // Before marking: both are processing + remainder
+      var counts = await sut.getAllCounts(user.id);
+      expect(counts.total, 2);
+      expect(counts.remainder, 2);
+      expect(counts.processing, 2);
+
+      // Mark asset1 as server-confirmed
+      await sut.markAsServerConfirmed([asset1.id]);
+
+      // After marking: asset1 is no longer processing or remainder
+      counts = await sut.getAllCounts(user.id);
+      expect(counts.total, 2);
+      expect(counts.remainder, 1); // only asset2
+      expect(counts.processing, 1); // only asset2
+    });
+
+    test('stores remoteId when remoteIdMap is provided', () async {
+      final album = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+      final asset1 = await ctx.newLocalAsset(checksumOption: const Option.none());
+      final asset2 = await ctx.newLocalAsset(checksumOption: const Option.none());
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: asset1.id);
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: asset2.id);
+
+      await sut.markAsServerConfirmed(
+        [asset1.id, asset2.id],
+        remoteIdMap: {asset1.id: 'server-uuid-1', asset2.id: 'server-uuid-2'},
+      );
+
+      // Verify remoteId was stored via raw SQL
+      final rows = await ctx.db.customSelect(
+        'SELECT id, checksum, remote_id FROM local_asset_entity WHERE id IN (?, ?)',
+        variables: [Variable.withString(asset1.id), Variable.withString(asset2.id)],
+      ).get();
+      final byId = {for (final r in rows) r.data['id'] as String: r.data};
+
+      expect(byId[asset1.id]!['remote_id'], 'server-uuid-1');
+      expect(byId[asset1.id]!['checksum'], kServerConfirmedChecksum);
+      expect(byId[asset2.id]!['remote_id'], 'server-uuid-2');
+      expect(byId[asset2.id]!['checksum'], kServerConfirmedChecksum);
+    });
+
+    test('works without remoteIdMap (backward compat)', () async {
+      final album = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+      final asset = await ctx.newLocalAsset(checksumOption: const Option.none());
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: asset.id);
+
+      await sut.markAsServerConfirmed([asset.id]);
+
+      final row = await ctx.db.customSelect(
+        'SELECT checksum, remote_id FROM local_asset_entity WHERE id = ?',
+        variables: [Variable.withString(asset.id)],
+      ).getSingle();
+      expect(row.data['checksum'], kServerConfirmedChecksum);
+      expect(row.data['remote_id'], isNull);
+    });
+  });
+
+  group('storeRemoteId', () {
+    test('stores server asset UUID for a local asset', () async {
+      final asset = await ctx.newLocalAsset();
+
+      await sut.storeRemoteId(asset.id, 'server-uuid-123');
+
+      final row = await ctx.db.customSelect(
+        'SELECT remote_id FROM local_asset_entity WHERE id = ?',
+        variables: [Variable.withString(asset.id)],
+      ).getSingle();
+      expect(row.data['remote_id'], 'server-uuid-123');
+    });
+
+    test('overwrites existing remoteId', () async {
+      final asset = await ctx.newLocalAsset();
+
+      await sut.storeRemoteId(asset.id, 'old-uuid');
+      await sut.storeRemoteId(asset.id, 'new-uuid');
+
+      final row = await ctx.db.customSelect(
+        'SELECT remote_id FROM local_asset_entity WHERE id = ?',
+        variables: [Variable.withString(asset.id)],
+      ).getSingle();
+      expect(row.data['remote_id'], 'new-uuid');
     });
   });
 }

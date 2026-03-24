@@ -461,16 +461,20 @@ export class AssetRepository {
     await this.db.deleteFrom('asset').where('ownerId', '=', ownerId).execute();
   }
 
-  async getByDeviceIds(ownerId: string, deviceId: string, deviceAssetIds: string[]): Promise<string[]> {
+  async getByDeviceIds(
+    ownerId: string,
+    deviceId: string,
+    deviceAssetIds: string[],
+  ): Promise<Array<{ deviceAssetId: string; id: string }>> {
     const assets = await this.db
       .selectFrom('asset')
-      .select(['deviceAssetId'])
+      .select(['deviceAssetId', 'id'])
       .where('deviceAssetId', 'in', deviceAssetIds)
       .where('deviceId', '=', deviceId)
       .where('ownerId', '=', asUuid(ownerId))
       .execute();
 
-    return assets.map((asset) => asset.deviceAssetId);
+    return assets.map((asset) => ({ deviceAssetId: asset.deviceAssetId, id: asset.id }));
   }
 
   @GenerateSql({ params: [DummyValue.UUID, DummyValue.STRING] })
