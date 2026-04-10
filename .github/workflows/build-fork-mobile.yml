@@ -29,7 +29,10 @@ jobs:
         run: flutter pub get
 
       - name: Generate i18n/localization files
-        run: flutter pub run build_runner build --delete-conflicting-outputs
+        run: |
+          dart run easy_localization:generate -S ../i18n
+          dart run bin/generate_keys.dart
+          flutter pub run build_runner build --delete-conflicting-outputs
 
       - name: Import distribution certificate
         uses: apple-actions/import-codesign-certs@v3
