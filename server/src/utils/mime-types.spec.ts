@@ -90,6 +90,7 @@ describe('mimeTypes', () => {
     { mimetype: 'video/mpeg', extension: '.mpg' },
     { mimetype: 'video/msvideo', extension: '.avi' },
     { mimetype: 'video/quicktime', extension: '.mov' },
+    { mimetype: 'video/quicktime', extension: '.qt' },
     { mimetype: 'video/vnd.avi', extension: '.avi' },
     { mimetype: 'video/webm', extension: '.webm' },
     { mimetype: 'video/x-flv', extension: '.flv' },

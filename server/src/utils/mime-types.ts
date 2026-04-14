@@ -108,6 +108,7 @@ const video: Record<string, string[]> = {
   '.m4v': ['video/x-m4v'],
   '.mkv': ['video/x-matroska'],
   '.mov': ['video/quicktime'],
+  '.qt': ['video/quicktime'],
   '.mp4': ['video/mp4'],
   '.mpe': ['video/mpeg'],
   '.mpeg': ['video/mpeg'],
