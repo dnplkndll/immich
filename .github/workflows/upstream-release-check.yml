@@ -1,0 +1,96 @@
+name: Upstream Release Check
+
+on:
+  schedule:
+    - cron: '0 9 * * *' # Daily at 09:00 UTC
+  workflow_dispatch:
+
+jobs:
+  check-release:
+    runs-on: ubuntu-latest
+    if: github.repository != 'immich-app/immich' # Only run on fork
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Get latest upstream release
+        id: upstream
+        run: |
+          TAG=$(gh api repos/immich-app/immich/releases/latest --jq '.tag_name')
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Latest upstream release: $TAG"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check for existing open issue
+        id: existing
+        run: |
+          TAG="${{ steps.upstream.outputs.tag }}"
+          COUNT=$(gh issue list \
+            --repo "$GITHUB_REPOSITORY" \
+            --label upstream-release \
+            --state open \
+            --search "$TAG" \
+            --json number \
+            --jq 'length')
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          echo "Open issues for $TAG: $COUNT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Close stale upstream-release issues
+        if: steps.existing.outputs.count == '0'
+        run: |
+          # Close any open upstream-release issues that are for older versions
+          gh issue list \
+            --repo "$GITHUB_REPOSITORY" \
+            --label upstream-release \
+            --state open \
+            --json number \
+            --jq '.[].number' | \
+          xargs -I{} gh issue close {} \
+            --repo "$GITHUB_REPOSITORY" \
+            --comment "Superseded by a newer release check." \
+          || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create upstream-release label if missing
+        if: steps.existing.outputs.count == '0'
+        run: |
+          gh label create upstream-release \
+            --repo "$GITHUB_REPOSITORY" \
+            --color "0075ca" \
+            --description "New upstream Immich release available" \
+          || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create issue for new release
+        if: steps.existing.outputs.count == '0'
+        run: |
+          TAG="${{ steps.upstream.outputs.tag }}"
+          gh issue create \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Upgrade available: upstream $TAG" \
+            --label upstream-release \
+            --body "$(cat <<EOF
+          ## New upstream Immich release: $TAG
+
+          **Release notes:** https://github.com/immich-app/immich/releases/tag/$TAG
+
+          **All releases:** https://github.com/immich-app/immich/releases
+
+          ## Upgrade checklist
+
+          - [ ] Review release notes and breaking changes
+          - [ ] Update \`repos.yaml\`: change \`upstream <old-tag>\` → \`upstream $TAG\`
+          - [ ] Run \`gitaggregate -c repos.yaml -p\` (resolve any merge conflicts)
+          - [ ] Verify CI passes on \`merged/deploy\`
+          - [ ] Deploy: \`helm upgrade --namespace immich immich oci://ghcr.io/immich-app/immich-charts/immich -f values.yaml\`
+          - [ ] Update server image tag in \`helm/values.yaml\` if needed
+          - [ ] Close this issue
+          EOF
+          )"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
