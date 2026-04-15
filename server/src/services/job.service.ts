@@ -149,6 +149,7 @@ export class JobService extends BaseService {
 
         if (asset.type === AssetType.Video) {
           jobs.push({ name: JobName.AssetEncodeVideo, data: item.data });
+          jobs.push({ name: JobName.AudioFingerprint, data: item.data });
         }
 
         await this.jobRepository.queueAll(jobs);

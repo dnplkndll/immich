@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ExifDateTime, exiftool, WriteTags } from 'exiftool-vendored';
 import ffmpeg, { FfprobeData } from 'fluent-ffmpeg';
 import { Duration } from 'luxon';
+import { execFile } from 'node:child_process';
 import fs from 'node:fs/promises';
 import { Writable } from 'node:stream';
 import sharp from 'sharp';
@@ -365,5 +366,27 @@ export class MediaRepository {
     }
 
     return 0;
+  }
+
+  async fingerprintAudio(input: string): Promise<{ fingerprint: number[]; duration: number } | null> {
+    return new Promise((resolve) => {
+      execFile('fpcalc', ['-raw', '-json', '-length', '120', input], (error, stdout) => {
+        if (error) {
+          this.logger.debug(`Could not fingerprint audio: ${error.message}`);
+          resolve(null);
+          return;
+        }
+        try {
+          const data = JSON.parse(stdout);
+          if (!Array.isArray(data.fingerprint) || data.fingerprint.length === 0) {
+            resolve(null);
+            return;
+          }
+          resolve({ fingerprint: data.fingerprint, duration: Number(data.duration) });
+        } catch {
+          resolve(null);
+        }
+      });
+    });
   }
 }

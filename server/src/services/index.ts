@@ -1,4 +1,5 @@
 import { ActivityService } from 'src/services/activity.service';
+import { AudioFingerprintService } from 'src/services/audio-fingerprint.service';
 import { AlbumService } from 'src/services/album.service';
 import { ApiKeyService } from 'src/services/api-key.service';
 import { ApiService } from 'src/services/api.service';
@@ -49,6 +50,7 @@ import { WorkflowService } from 'src/services/workflow.service';
 export const services = [
   ApiKeyService,
   ActivityService,
+  AudioFingerprintService,
   AlbumService,
   ApiService,
   AssetMediaService,
