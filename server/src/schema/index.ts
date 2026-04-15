@@ -25,6 +25,7 @@ import {
   user_metadata_audit,
 } from 'src/schema/functions';
 import { ActivityTable } from 'src/schema/tables/activity.table';
+import { AudioFingerprintTable } from 'src/schema/tables/audio-fingerprint.table';
 import { AlbumAssetAuditTable } from 'src/schema/tables/album-asset-audit.table';
 import { AlbumAssetTable } from 'src/schema/tables/album-asset.table';
 import { AlbumAuditTable } from 'src/schema/tables/album-audit.table';
@@ -107,6 +108,7 @@ export class ImmichDatabase {
     AssetOcrTable,
     AssetTable,
     AssetFileTable,
+    AudioFingerprintTable,
     AssetExifTable,
     FaceSearchTable,
     GeodataPlacesTable,
@@ -208,6 +210,7 @@ export interface DB {
   asset_audio: AssetAudioTable;
   asset_video: AssetVideoTable;
   asset_keyframe: AssetKeyframeTable;
+  audio_fingerprint: AudioFingerprintTable;
   ocr_search: OcrSearchTable;
 
   face_search: FaceSearchTable;
