@@ -82,6 +82,8 @@ RUN --mount=type=cache,id=pnpm-packages,target=/buildcache/pnpm-store \
 
 FROM ghcr.io/immich-app/base-server-prod:202607132058@sha256:85cca651310842265015f26a6710bb7420a54a8fd1ec22d519b7b620f5f93bb1
 
+RUN apt-get update && apt-get install -y --no-install-recommends libchromaprint-tools && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /usr/src/app
 ENV NODE_ENV=production \
   NVIDIA_DRIVER_CAPABILITIES=all \
