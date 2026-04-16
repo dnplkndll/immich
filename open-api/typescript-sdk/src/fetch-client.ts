@@ -1225,6 +1225,7 @@ export type QueueResponseLegacyDto = {
     queueStatus: QueueStatusLegacyDto;
 };
 export type QueuesResponseLegacyDto = {
+    audioAnalysis: QueueResponseLegacyDto;
     backgroundTask: QueueResponseLegacyDto;
     backupDatabase: QueueResponseLegacyDto;
     duplicateDetection: QueueResponseLegacyDto;
@@ -2298,6 +2299,12 @@ export type SyncStreamDto = {
     /** Sync request types */
     types: SyncRequestType[];
 };
+export type SystemConfigAudioFingerprintingDto = {
+    /** Enabled */
+    enabled: boolean;
+    /** Max BER distance */
+    maxDistance: number;
+};
 export type DatabaseBackupConfig = {
     /** Cron expression */
     cronExpression: string;
@@ -2378,6 +2385,7 @@ export type JobSettingsDto = {
     concurrency: number;
 };
 export type SystemConfigJobDto = {
+    audioAnalysis?: JobSettingsDto;
     backgroundTask: JobSettingsDto;
     editor: JobSettingsDto;
     faceDetection: JobSettingsDto;
@@ -2590,6 +2598,7 @@ export type SystemConfigUserDto = {
     deleteDelay: number;
 };
 export type SystemConfigDto = {
+    audioFingerprinting?: SystemConfigAudioFingerprintingDto;
     backup: SystemConfigBackupsDto;
     ffmpeg: SystemConfigFFmpegDto;
     image: SystemConfigImageDto;
@@ -6963,7 +6972,8 @@ export enum QueueName {
     BackupDatabase = "backupDatabase",
     Ocr = "ocr",
     Workflow = "workflow",
-    Editor = "editor"
+    Editor = "editor",
+    AudioAnalysis = "audioAnalysis"
 }
 export enum QueueCommand {
     Start = "start",
@@ -7065,7 +7075,9 @@ export enum JobName {
     VersionCheck = "VersionCheck",
     OcrQueueAll = "OcrQueueAll",
     Ocr = "Ocr",
-    WorkflowRun = "WorkflowRun"
+    WorkflowRun = "WorkflowRun",
+    AudioFingerprintQueueAll = "AudioFingerprintQueueAll",
+    AudioFingerprint = "AudioFingerprint"
 }
 export enum SearchSuggestionType {
     Country = "country",
