@@ -13,6 +13,7 @@ part of openapi.api;
 class SystemConfigJobDto {
   /// Returns a new [SystemConfigJobDto] instance.
   SystemConfigJobDto({
+    required this.audioAnalysis,
     required this.backgroundTask,
     required this.editor,
     required this.faceDetection,
@@ -28,6 +29,8 @@ class SystemConfigJobDto {
     required this.videoConversion,
     required this.workflow,
   });
+
+  JobSettingsDto audioAnalysis;
 
   JobSettingsDto backgroundTask;
 
@@ -59,6 +62,7 @@ class SystemConfigJobDto {
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is SystemConfigJobDto &&
+    other.audioAnalysis == audioAnalysis &&
     other.backgroundTask == backgroundTask &&
     other.editor == editor &&
     other.faceDetection == faceDetection &&
@@ -77,6 +81,7 @@ class SystemConfigJobDto {
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
+    (audioAnalysis.hashCode) +
     (backgroundTask.hashCode) +
     (editor.hashCode) +
     (faceDetection.hashCode) +
@@ -93,10 +98,11 @@ class SystemConfigJobDto {
     (workflow.hashCode);
 
   @override
-  String toString() => 'SystemConfigJobDto[backgroundTask=$backgroundTask, editor=$editor, faceDetection=$faceDetection, library_=$library_, metadataExtraction=$metadataExtraction, migration=$migration, notifications=$notifications, ocr=$ocr, search=$search, sidecar=$sidecar, smartSearch=$smartSearch, thumbnailGeneration=$thumbnailGeneration, videoConversion=$videoConversion, workflow=$workflow]';
+  String toString() => 'SystemConfigJobDto[audioAnalysis=$audioAnalysis, backgroundTask=$backgroundTask, editor=$editor, faceDetection=$faceDetection, library_=$library_, metadataExtraction=$metadataExtraction, migration=$migration, notifications=$notifications, ocr=$ocr, search=$search, sidecar=$sidecar, smartSearch=$smartSearch, thumbnailGeneration=$thumbnailGeneration, videoConversion=$videoConversion, workflow=$workflow]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
+      json[r'audioAnalysis'] = this.audioAnalysis;
       json[r'backgroundTask'] = this.backgroundTask;
       json[r'editor'] = this.editor;
       json[r'faceDetection'] = this.faceDetection;
@@ -123,6 +129,7 @@ class SystemConfigJobDto {
       final json = value.cast<String, dynamic>();
 
       return SystemConfigJobDto(
+        audioAnalysis: JobSettingsDto.fromJson(json[r'audioAnalysis'])!,
         backgroundTask: JobSettingsDto.fromJson(json[r'backgroundTask'])!,
         editor: JobSettingsDto.fromJson(json[r'editor'])!,
         faceDetection: JobSettingsDto.fromJson(json[r'faceDetection'])!,
@@ -184,6 +191,7 @@ class SystemConfigJobDto {
 
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
+    'audioAnalysis',
     'backgroundTask',
     'editor',
     'faceDetection',

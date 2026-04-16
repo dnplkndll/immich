@@ -78,6 +78,8 @@ class JobName {
   static const ocrQueueAll = JobName._(r'OcrQueueAll');
   static const ocr = JobName._(r'Ocr');
   static const workflowRun = JobName._(r'WorkflowRun');
+  static const audioFingerprintQueueAll = JobName._(r'AudioFingerprintQueueAll');
+  static const audioFingerprint = JobName._(r'AudioFingerprint');
 
   /// List of all possible values in this [enum][JobName].
   static const values = <JobName>[
@@ -136,6 +138,8 @@ class JobName {
     ocrQueueAll,
     ocr,
     workflowRun,
+    audioFingerprintQueueAll,
+    audioFingerprint,
   ];
 
   static JobName? fromJson(dynamic value) => JobNameTypeTransformer().decode(value);
@@ -229,6 +233,8 @@ class JobNameTypeTransformer {
         case r'OcrQueueAll': return JobName.ocrQueueAll;
         case r'Ocr': return JobName.ocr;
         case r'WorkflowRun': return JobName.workflowRun;
+        case r'AudioFingerprintQueueAll': return JobName.audioFingerprintQueueAll;
+        case r'AudioFingerprint': return JobName.audioFingerprint;
         default:
           if (!allowNull) {
             throw ArgumentError('Unknown enum value to decode: $data');

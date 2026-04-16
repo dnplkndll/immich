@@ -17922,7 +17922,9 @@
           "VersionCheck",
           "OcrQueueAll",
           "Ocr",
-          "WorkflowRun"
+          "WorkflowRun",
+          "AudioFingerprintQueueAll",
+          "AudioFingerprint"
         ],
         "type": "string"
       },
@@ -20340,7 +20342,8 @@
           "backupDatabase",
           "ocr",
           "workflow",
-          "editor"
+          "editor",
+          "audioAnalysis"
         ],
         "type": "string"
       },
@@ -20456,6 +20459,9 @@
       },
       "QueuesResponseLegacyDto": {
         "properties": {
+          "audioAnalysis": {
+            "$ref": "#/components/schemas/QueueResponseLegacyDto"
+          },
           "backgroundTask": {
             "$ref": "#/components/schemas/QueueResponseLegacyDto"
           },
@@ -20512,6 +20518,7 @@
           }
         },
         "required": [
+          "audioAnalysis",
           "backgroundTask",
           "backupDatabase",
           "duplicateDetection",
@@ -23929,6 +23936,25 @@
         ],
         "type": "object"
       },
+      "SystemConfigAudioFingerprintingDto": {
+        "properties": {
+          "enabled": {
+            "description": "Enabled",
+            "type": "boolean"
+          },
+          "maxDistance": {
+            "description": "Max BER distance",
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "enabled",
+          "maxDistance"
+        ],
+        "type": "object"
+      },
       "SystemConfigBackupsDto": {
         "properties": {
           "database": {
@@ -23943,6 +23969,9 @@
       "SystemConfigDto": {
         "description": "System configuration",
         "properties": {
+          "audioFingerprinting": {
+            "$ref": "#/components/schemas/SystemConfigAudioFingerprintingDto"
+          },
           "backup": {
             "$ref": "#/components/schemas/SystemConfigBackupsDto"
           },
@@ -24255,6 +24284,12 @@
       },
       "SystemConfigJobDto": {
         "properties": {
+          "audioAnalysis": {
+            "$ref": "#/components/schemas/JobSettingsDto",
+            "default": {
+              "concurrency": 2
+            }
+          },
           "backgroundTask": {
             "$ref": "#/components/schemas/JobSettingsDto"
           },

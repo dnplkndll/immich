@@ -9,13 +9,16 @@ import { isAudioFingerprintingEnabled } from 'src/utils/misc';
 // Chromaprint returns unsigned 32-bit ints; PostgreSQL integer is signed 32-bit.
 // Reinterpret as signed — XOR/popcount is bit-identical either way.
 function toSigned32(n: number): number {
-  return n | 0;
+  // Reinterpret unsigned 32-bit as signed via DataView
+  const view = new DataView(new ArrayBuffer(4));
+  view.setUint32(0, n);
+  return view.getInt32(0);
 }
 
 function popcount32(n: number): number {
-  n = n - ((n >>> 1) & 0x55555555);
-  n = (n & 0x33333333) + ((n >>> 2) & 0x33333333);
-  return (((n + (n >>> 4)) & 0x0f0f0f0f) * 0x01010101) >>> 24;
+  n = n - ((n >>> 1) & 0x55_55_55_55);
+  n = (n & 0x33_33_33_33) + ((n >>> 2) & 0x33_33_33_33);
+  return Math.trunc((((n + (n >>> 4)) & 0x0f_0f_0f_0f) * 0x01_01_01_01) >>> 24);
 }
 
 function computeBer(a: number[], b: number[]): number {
@@ -93,7 +96,7 @@ export class AudioFingerprintService extends BaseService {
       return JobStatus.Skipped;
     }
 
-    const signedFingerprint = result.fingerprint.map(toSigned32);
+    const signedFingerprint = result.fingerprint.map((n) => toSigned32(n));
 
     await this.audioFingerprintRepository.upsert({
       assetId: id,
@@ -108,9 +111,7 @@ export class AudioFingerprintService extends BaseService {
       .filter((c) => computeBer(signedFingerprint, c.fingerprint as number[]) < audioFingerprinting.maxDistance);
 
     if (matches.length > 0) {
-      this.logger.debug(
-        `Found ${matches.length} audio duplicate${matches.length === 1 ? '' : 's'} for asset ${id}`,
-      );
+      this.logger.debug(`Found ${matches.length} audio duplicate${matches.length === 1 ? '' : 's'} for asset ${id}`);
       await this.updateDuplicates(
         { id, duplicateId: asset.duplicateId },
         matches.map((m) => ({ assetId: m.assetId, duplicateId: m.duplicateId })),
@@ -135,10 +136,10 @@ export class AudioFingerprintService extends BaseService {
     ];
 
     const targetDuplicateId = asset.duplicateId ?? duplicateIds.shift() ?? this.cryptoRepository.randomUUID();
-    const assetIdsToUpdate = duplicateAssets
-      .filter((a) => a.duplicateId !== targetDuplicateId)
-      .map((a) => a.assetId);
-    assetIdsToUpdate.push(asset.id);
+    const assetIdsToUpdate = [
+      ...duplicateAssets.filter((a) => a.duplicateId !== targetDuplicateId).map((a) => a.assetId),
+      asset.id,
+    ];
 
     await this.duplicateRepository.merge({
       targetId: targetDuplicateId,

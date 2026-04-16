@@ -109,7 +109,7 @@ const SystemConfigJobSchema = z
     ocr: JobSettingsSchema,
     workflow: JobSettingsSchema,
     editor: JobSettingsSchema,
-    audioAnalysis: JobSettingsSchema,
+    audioAnalysis: JobSettingsSchema.optional().default({ concurrency: 2 }),
   })
   .meta({ id: 'SystemConfigJobDto' });
 
@@ -361,7 +361,10 @@ const SystemConfigUserSchema = z
 
 export const SystemConfigSchema = z
   .object({
-    audioFingerprinting: SystemConfigAudioFingerprintingSchema,
+    audioFingerprinting: SystemConfigAudioFingerprintingSchema.optional().default({
+      enabled: false,
+      maxDistance: 0.35,
+    }),
     backup: SystemConfigBackupsSchema,
     ffmpeg: SystemConfigFFmpegSchema,
     logging: SystemConfigLoggingSchema,

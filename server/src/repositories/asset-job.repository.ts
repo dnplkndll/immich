@@ -480,7 +480,14 @@ export class AssetJobRepository {
   getForAudioFingerprintJob(id: string) {
     return this.db
       .selectFrom('asset')
-      .select(['asset.id', 'asset.type', 'asset.ownerId', 'asset.originalPath', 'asset.duplicateId', 'asset.visibility'])
+      .select([
+        'asset.id',
+        'asset.type',
+        'asset.ownerId',
+        'asset.originalPath',
+        'asset.duplicateId',
+        'asset.visibility',
+      ])
       .where('asset.id', '=', asUuid(id))
       .executeTakeFirst();
   }
