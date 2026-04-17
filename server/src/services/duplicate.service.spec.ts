@@ -59,9 +59,13 @@ describe(DuplicateService.name, () => {
       ]);
     });
 
-    it('should return suggestedKeepAssetIds based on file size', async () => {
-      const smallAsset = AssetFactory.from().exif({ fileSizeInByte: 1000 }).build();
-      const largeAsset = AssetFactory.from().exif({ fileSizeInByte: 5000 }).build();
+    it('should return suggestedKeepAssetIds based on quality score', async () => {
+      const smallAsset = AssetFactory.from()
+        .exif({ fileSizeInByte: 500_000, exifImageWidth: 1280, exifImageHeight: 720 })
+        .build();
+      const largeAsset = AssetFactory.from()
+        .exif({ fileSizeInByte: 5_000_000, exifImageWidth: 4032, exifImageHeight: 3024 })
+        .build();
       mocks.duplicateRepository.cleanupSingletonGroups.mockResolvedValue();
       mocks.duplicateRepository.getAll.mockResolvedValue([
         {
