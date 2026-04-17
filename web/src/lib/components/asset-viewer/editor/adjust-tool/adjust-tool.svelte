@@ -1,7 +1,6 @@
 <script lang="ts">
   import { adjustManager } from '$lib/managers/edit/adjust-manager.svelte';
   import { Button } from '@immich/ui';
-  import { t } from 'svelte-i18n';
   import FilterPresets from './filter-presets.svelte';
 
   interface SliderConfig {
@@ -20,7 +19,7 @@
 
 <div class="mt-3 px-4">
   <div class="flex h-10 w-full items-center justify-between text-sm mt-2">
-    <h2>{$t('editor_adjustments') ?? 'Adjustments'}</h2>
+    <h2>Adjustments</h2>
     <Button
       size="small"
       shape="round"
@@ -52,7 +51,7 @@
   </div>
 
   <div class="flex h-10 w-full items-center justify-between text-sm mt-6">
-    <h2>{$t('editor_filters') ?? 'Filters'}</h2>
+    <h2>Filters</h2>
   </div>
 
   <FilterPresets />

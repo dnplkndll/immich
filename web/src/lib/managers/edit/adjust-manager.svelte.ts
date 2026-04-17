@@ -24,15 +24,27 @@ const defaultValues: AdjustValues = {
 };
 
 export const filterPresets: FilterPreset[] = [
-  { name: 'original', label: 'Original', values: { brightness: 0, contrast: 0, saturation: 0, warmth: 0, sharpness: 0 } },
+  {
+    name: 'original',
+    label: 'Original',
+    values: { brightness: 0, contrast: 0, saturation: 0, warmth: 0, sharpness: 0 },
+  },
   { name: 'vivid', label: 'Vivid', values: { brightness: 5, contrast: 15, saturation: 40, warmth: 0, sharpness: 10 } },
-  { name: 'dramatic', label: 'Dramatic', values: { brightness: -10, contrast: 40, saturation: -10, warmth: 0, sharpness: 20 } },
+  {
+    name: 'dramatic',
+    label: 'Dramatic',
+    values: { brightness: -10, contrast: 40, saturation: -10, warmth: 0, sharpness: 20 },
+  },
   { name: 'noir', label: 'Noir', values: { brightness: -5, contrast: 30, saturation: -100, warmth: 0, sharpness: 15 } },
   { name: 'mono', label: 'Mono', values: { brightness: 0, contrast: 10, saturation: -100, warmth: 0, sharpness: 0 } },
   { name: 'sepia', label: 'Sepia', values: { brightness: 5, contrast: 5, saturation: -50, warmth: 40, sharpness: 0 } },
   { name: 'warm', label: 'Warm', values: { brightness: 5, contrast: 5, saturation: 10, warmth: 30, sharpness: 0 } },
   { name: 'cool', label: 'Cool', values: { brightness: 0, contrast: 5, saturation: 5, warmth: -30, sharpness: 0 } },
-  { name: 'vintage', label: 'Vintage', values: { brightness: -5, contrast: -10, saturation: -30, warmth: 20, sharpness: 0 } },
+  {
+    name: 'vintage',
+    label: 'Vintage',
+    values: { brightness: -5, contrast: -10, saturation: -30, warmth: 20, sharpness: 0 },
+  },
   { name: 'fade', label: 'Fade', values: { brightness: 10, contrast: -20, saturation: -20, warmth: 0, sharpness: 0 } },
 ];
 
@@ -43,20 +55,20 @@ export const filterPresets: FilterPreset[] = [
  * warmth: mapped to hue 0-360 (warm = slight rotation, cool = opposite)
  */
 function sliderToServerBrightness(value: number): number {
-  // -100 -> 0.0, 0 -> 1.0, +100 -> 2.0
-  return 1.0 + value / 100;
+  // -100 -> 0, 0 -> 1, +100 -> 2
+  return 1 + value / 100;
 }
 
 function sliderToServerContrast(value: number): number {
-  return 1.0 + value / 100;
+  return 1 + value / 100;
 }
 
 function sliderToServerSaturation(value: number): number {
-  return 1.0 + value / 100;
+  return 1 + value / 100;
 }
 
 function sliderToServerSharpness(value: number): number {
-  // -100 -> 0, 0 -> 0, +100 -> 2.0
+  // -100 -> 0, 0 -> 0, +100 -> 2
   return Math.max(0, value / 50);
 }
 
@@ -89,8 +101,8 @@ class AdjustManager implements EditToolManager {
     const c = sliderToServerContrast(this.contrast);
     const s = sliderToServerSaturation(this.saturation);
     // Warmth is approximated in CSS with sepia + hue-rotate
-    const warmthFilter = this.warmth > 0 ? `sepia(${this.warmth / 100 * 0.3})` : '';
-    const coolFilter = this.warmth < 0 ? `hue-rotate(${Math.round(this.warmth / 100 * 30)}deg)` : '';
+    const warmthFilter = this.warmth > 0 ? `sepia(${(this.warmth / 100) * 0.3})` : '';
+    const coolFilter = this.warmth < 0 ? `hue-rotate(${Math.round((this.warmth / 100) * 30)}deg)` : '';
     return `brightness(${b}) contrast(${c}) saturate(${s}) ${warmthFilter} ${coolFilter}`.trim();
   });
 
@@ -156,6 +168,7 @@ class AdjustManager implements EditToolManager {
     this.hasChanges = true;
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async onActivate(_asset: AssetResponseDto, edits: EditActions): Promise<void> {
     // Only restore from server edits if we don't already have local changes
     if (this.hasChanges) {
@@ -165,10 +178,16 @@ class AdjustManager implements EditToolManager {
     // Restore adjust state from existing edits if present
     const adjustEdit = edits.find((e) => (e.action as string) === 'adjust');
     if (adjustEdit) {
-      const params = adjustEdit.parameters as { brightness: number; contrast: number; saturation: number; hue: number; sharpness: number };
-      this.brightness = Math.round((params.brightness - 1.0) * 100);
-      this.contrast = Math.round((params.contrast - 1.0) * 100);
-      this.saturation = Math.round((params.saturation - 1.0) * 100);
+      const params = adjustEdit.parameters as unknown as {
+        brightness: number;
+        contrast: number;
+        saturation: number;
+        hue: number;
+        sharpness: number;
+      };
+      this.brightness = Math.round((params.brightness - 1) * 100);
+      this.contrast = Math.round((params.contrast - 1) * 100);
+      this.saturation = Math.round((params.saturation - 1) * 100);
       this.sharpness = Math.round(params.sharpness * 50);
       // Reverse hue to warmth
       if (params.hue <= 30) {
@@ -191,6 +210,7 @@ class AdjustManager implements EditToolManager {
     // The edits derived property keeps providing values to the edit manager
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async resetAllChanges() {
     this.reset();
   }

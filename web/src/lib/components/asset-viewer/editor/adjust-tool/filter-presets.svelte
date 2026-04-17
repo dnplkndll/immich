@@ -10,7 +10,8 @@
       onclick={() => adjustManager.applyPreset(preset)}
     >
       <div
-        class="w-16 h-16 rounded-lg border-2 flex items-center justify-center text-xs font-medium transition-colors {adjustManager.activeFilter === preset.name
+        class="w-16 h-16 rounded-lg border-2 flex items-center justify-center text-xs font-medium transition-colors {adjustManager.activeFilter ===
+        preset.name
           ? 'border-immich-primary dark:border-immich-dark-primary bg-immich-primary/10 dark:bg-immich-dark-primary/10'
           : 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700'}"
       >
