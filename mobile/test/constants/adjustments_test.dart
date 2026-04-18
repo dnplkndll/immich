@@ -54,15 +54,69 @@ void main() {
   });
 
   group('adjustValuesToColorFilter', () {
-    test('returns a ColorFilter for identity values', () {
+    test('identity AdjustValues produces identity ColorFilter.matrix', () {
       final filter = adjustValuesToColorFilter(const AdjustValues());
-      expect(filter, isA<ColorFilter>());
+      expect(
+        filter,
+        equals(
+          const ColorFilter.matrix(<double>[
+            1, 0, 0, 0, 0, //
+            0, 1, 0, 0, 0,
+            0, 0, 1, 0, 0,
+            0, 0, 0, 1, 0,
+          ]),
+        ),
+      );
     });
 
     test('returns distinct filters for distinct values', () {
       final identity = adjustValuesToColorFilter(const AdjustValues());
       final shifted = adjustValuesToColorFilter(const AdjustValues(brightness: 50));
       expect(identity, isNot(equals(shifted)));
+    });
+  });
+
+  group('warmth <-> hue mapping', () {
+    test('warmth 0 is hue 0', () {
+      expect(warmthToHue(0), 0);
+    });
+
+    test('warmth +100 maps to 30 degrees and back', () {
+      expect(warmthToHue(100), 30);
+      expect(hueToWarmth(30), closeTo(100, 1e-9));
+    });
+
+    test('warmth -100 maps to 330 degrees and back', () {
+      expect(warmthToHue(-100), 330);
+      expect(hueToWarmth(330), closeTo(-100, 1e-9));
+    });
+
+    test('round-trip preserves value across the warm/cool band', () {
+      for (final warmth in [-100.0, -50.0, -1.0, 0.0, 1.0, 50.0, 100.0]) {
+        final hue = warmthToHue(warmth);
+        expect(hueToWarmth(hue), closeTo(warmth, 1e-9), reason: 'warmth=$warmth hue=$hue');
+      }
+    });
+
+    test('hue outside the warm/cool bands is treated as neutral', () {
+      expect(hueToWarmth(90), 0);
+      expect(hueToWarmth(180), 0);
+      expect(hueToWarmth(329), 0);
+    });
+  });
+
+  group('forward slider mappings', () {
+    test('sliderToMultiplier is 1.0 at 0', () {
+      expect(sliderToMultiplier(0), 1.0);
+      expect(sliderToMultiplier(100), 2.0);
+      expect(sliderToMultiplier(-100), 0.0);
+    });
+
+    test('sliderToSharpness clamps negatives to 0', () {
+      expect(sliderToSharpness(-50), 0);
+      expect(sliderToSharpness(0), 0);
+      expect(sliderToSharpness(50), 1.0);
+      expect(sliderToSharpness(100), 2.0);
     });
   });
 

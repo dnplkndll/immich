@@ -90,6 +90,34 @@ const AdjustValues autoEnhanceValues = AdjustValues(
   sharpness: 10,
 );
 
+/// Forward maps from UI sliders (−100..+100) onto the server-side sharp
+/// parameter ranges. Kept in sync with the web client's adjust-manager.
+
+/// brightness / contrast / saturation: 1.0 is identity (no change).
+double sliderToMultiplier(double slider) => 1.0 + slider / 100;
+
+/// sharpness is one-sided: negative values become 0 (no sharpen).
+double sliderToSharpness(double slider) => slider <= 0 ? 0 : (slider / 100) * 2;
+
+/// warmth is approximated through hue rotation: warm → [0, 30]°, cool → [330, 360)°.
+double warmthToHue(double warmth) {
+  if (warmth == 0) return 0;
+  final deg = warmth / 100 * 30;
+  return deg >= 0 ? deg : 360 + deg;
+}
+
+/// Reverse of [warmthToHue]. Hue values outside the warm/cool bands map to
+/// neutral (0) rather than clamping, matching the web adjust-manager.
+double hueToWarmth(double hueDeg) {
+  if (hueDeg >= 0 && hueDeg <= 30) {
+    return (hueDeg / 30) * 100;
+  }
+  if (hueDeg >= 330 && hueDeg < 360) {
+    return ((hueDeg - 360) / 30) * 100;
+  }
+  return 0;
+}
+
 const double _lumR = 0.2126;
 const double _lumG = 0.7152;
 const double _lumB = 0.0722;

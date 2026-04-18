@@ -21,16 +21,6 @@ import 'package:openapi/api.dart' show AdjustParameters, MirrorAxis, MirrorParam
 
 enum _EditorTool { transform, adjust }
 
-double _sliderToMultiplier(double slider) => 1.0 + slider / 100;
-
-double _sliderToSharpness(double slider) => slider <= 0 ? 0 : (slider / 100) * 2;
-
-double _sliderToHue(double slider) {
-  if (slider == 0) return 0;
-  final deg = slider / 100 * 30;
-  return deg >= 0 ? deg : 360 + deg;
-}
-
 @RoutePage()
 class DriftEditImagePage extends ConsumerStatefulWidget {
   final Image image;
@@ -80,11 +70,11 @@ class _DriftEditImagePageState extends ConsumerState<DriftEditImagePage> with Ti
       edits.add(
         AdjustEdit(
           AdjustParameters(
-            brightness: _sliderToMultiplier(v.brightness),
-            contrast: _sliderToMultiplier(v.contrast),
-            saturation: _sliderToMultiplier(v.saturation),
-            hue: _sliderToHue(v.warmth),
-            sharpness: _sliderToSharpness(v.sharpness),
+            brightness: sliderToMultiplier(v.brightness),
+            contrast: sliderToMultiplier(v.contrast),
+            saturation: sliderToMultiplier(v.saturation),
+            hue: warmthToHue(v.warmth),
+            sharpness: sliderToSharpness(v.sharpness),
           ),
         ),
       );

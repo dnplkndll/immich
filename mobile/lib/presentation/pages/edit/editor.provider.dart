@@ -48,24 +48,12 @@ class EditorProvider extends Notifier<EditorState> {
 
   static AdjustValues _adjustValuesFromServer(AdjustEdit edit) {
     final p = edit.parameters;
-    final hueDeg = p.hue.toDouble();
-    // Mirror the forward mapping in drift_edit.page.dart: warm > 0 -> hue in
-    // [0, 30], cool < 0 -> hue in [330, 360). Any hue outside those bands is
-    // treated as neutral rather than clamping to ±100.
-    final double warmth;
-    if (hueDeg >= 0 && hueDeg <= 30) {
-      warmth = (hueDeg / 30) * 100;
-    } else if (hueDeg >= 330 && hueDeg < 360) {
-      warmth = ((hueDeg - 360) / 30) * 100;
-    } else {
-      warmth = 0;
-    }
     final sharpness = p.sharpness.toDouble() / 2 * 100;
     return AdjustValues(
       brightness: (p.brightness.toDouble() - 1) * 100,
       contrast: (p.contrast.toDouble() - 1) * 100,
       saturation: (p.saturation.toDouble() - 1) * 100,
-      warmth: warmth.clamp(-100.0, 100.0),
+      warmth: hueToWarmth(p.hue.toDouble()).clamp(-100.0, 100.0),
       sharpness: sharpness.clamp(0.0, 100.0),
     );
   }
