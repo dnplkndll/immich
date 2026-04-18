@@ -2,6 +2,7 @@
   import { adjustManager, type AdjustValues } from '$lib/managers/edit/adjust-manager.svelte';
   import { Button } from '@immich/ui';
   import { t } from 'svelte-i18n';
+  import AdjustSlider from './adjust-slider.svelte';
   import FilterPresets from './filter-presets.svelte';
 
   interface SliderConfig {
@@ -33,22 +34,11 @@
 
   <div class="flex flex-col gap-3 mt-2">
     {#each sliders as slider (slider.key)}
-      <div class="flex flex-col gap-1">
-        <div class="flex items-center justify-between text-xs text-immich-fg dark:text-immich-dark-fg">
-          <span>{slider.label}</span>
-          <span class="tabular-nums w-8 text-right">{adjustManager[slider.key]}</span>
-        </div>
-        <input
-          type="range"
-          min="-100"
-          max="100"
-          step="1"
-          aria-label={slider.label}
-          value={adjustManager[slider.key]}
-          oninput={(e) => adjustManager.setValue(slider.key, Number(e.currentTarget.value))}
-          class="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-immich-primary dark:accent-immich-dark-primary bg-gray-300 dark:bg-gray-600"
-        />
-      </div>
+      <AdjustSlider
+        label={slider.label}
+        value={adjustManager[slider.key]}
+        onChange={(v) => adjustManager.setValue(slider.key, v)}
+      />
     {/each}
   </div>
 
