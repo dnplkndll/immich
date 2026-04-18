@@ -148,7 +148,12 @@ class _DriftEditImagePageState extends ConsumerState<DriftEditImagePage> with Ti
             bottom: false,
             child: Column(
               children: [
-                Expanded(child: _EditorPreview(image: widget.image)),
+                Expanded(
+                  child: _EditorPreview(
+                    image: widget.image,
+                    showAdjustments: _activeTool == _EditorTool.adjust,
+                  ),
+                ),
                 AnimatedSize(
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeInOut,
@@ -373,8 +378,9 @@ class _ResetEditsButton extends ConsumerWidget {
 
 class _EditorPreview extends ConsumerStatefulWidget {
   final Image image;
+  final bool showAdjustments;
 
-  const _EditorPreview({required this.image});
+  const _EditorPreview({required this.image, this.showAdjustments = false});
 
   @override
   ConsumerState<_EditorPreview> createState() => _EditorPreviewState();
@@ -445,10 +451,16 @@ class _EditorPreviewState extends ConsumerState<_EditorPreview> with TickerProvi
                 padding: const EdgeInsets.all(10),
                 width: (editorState.rotationAngle % 180 == 0) ? baseWidth : baseHeight,
                 height: (editorState.rotationAngle % 180 == 0) ? baseHeight : baseWidth,
-                child: ColorFiltered(
-                  colorFilter: adjustValuesToColorFilter(editorState.adjustValues),
-                  child: CropImage(controller: cropController, image: widget.image, gridColor: Colors.white),
-                ),
+                child: widget.showAdjustments
+                    ? ColorFiltered(
+                        colorFilter: adjustValuesToColorFilter(editorState.adjustValues),
+                        child: CropImage(
+                          controller: cropController,
+                          image: widget.image,
+                          gridColor: Colors.transparent,
+                        ),
+                      )
+                    : CropImage(controller: cropController, image: widget.image, gridColor: Colors.white),
               ),
             ),
           ),
