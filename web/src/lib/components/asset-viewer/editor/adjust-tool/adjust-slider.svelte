@@ -11,6 +11,17 @@
   let { label, value, min = -100, max = 100, step = 1, onChange }: Props = $props();
 
   const clamp = (n: number) => Math.min(max, Math.max(min, Math.round(n)));
+
+  const handleNumberInput = (raw: string) => {
+    if (raw === '' || raw === '-') {
+      return;
+    }
+    const n = Number(raw);
+    if (Number.isNaN(n)) {
+      return;
+    }
+    onChange(clamp(n));
+  };
 </script>
 
 <div class="flex flex-col gap-1">
@@ -25,7 +36,7 @@
       {value}
       aria-label="{label} value"
       class="tabular-nums w-12 text-right bg-transparent border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5 focus:outline-none focus:border-immich-primary dark:focus:border-immich-dark-primary"
-      oninput={(e) => onChange(clamp(Number(e.currentTarget.value)))}
+      oninput={(e) => handleNumberInput(e.currentTarget.value)}
     />
   </div>
   <input

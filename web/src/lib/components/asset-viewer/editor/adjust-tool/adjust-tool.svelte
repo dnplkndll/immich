@@ -11,6 +11,7 @@
   interface SliderConfig {
     key: keyof AdjustValues;
     label: string;
+    min?: number;
   }
 
   const sliders: SliderConfig[] = [
@@ -18,7 +19,7 @@
     { key: 'contrast', label: $t('contrast') },
     { key: 'saturation', label: $t('saturation') },
     { key: 'warmth', label: $t('warmth') },
-    { key: 'sharpness', label: $t('sharpness') },
+    { key: 'sharpness', label: $t('sharpness'), min: 0 },
   ];
 
   let activeTab: Tab = $state('adjustments');
@@ -64,6 +65,7 @@
         <AdjustSlider
           label={slider.label}
           value={adjustManager[slider.key]}
+          min={slider.min}
           onChange={(v) => adjustManager.setValue(slider.key, v)}
         />
       {/each}
