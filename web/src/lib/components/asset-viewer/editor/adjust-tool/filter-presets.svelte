@@ -1,24 +1,47 @@
 <script lang="ts">
-  import { adjustManager, filterPresets } from '$lib/managers/edit/adjust-manager.svelte';
+  import { adjustManager, cssFilterForAdjustValues, filterPresets } from '$lib/managers/edit/adjust-manager.svelte';
+  import { editManager } from '$lib/managers/edit/edit-manager.svelte';
+  import { getAssetMediaUrl } from '$lib/utils';
+  import { AssetMediaSize } from '@immich/sdk';
+
+  const thumbnailUrl = $derived(
+    editManager.currentAsset
+      ? getAssetMediaUrl({
+          id: editManager.currentAsset.id,
+          size: AssetMediaSize.Thumbnail,
+          cacheKey: editManager.currentAsset.thumbhash,
+        })
+      : null,
+  );
 </script>
 
-<div class="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+<div class="grid grid-cols-4 gap-2 pb-2">
   {#each filterPresets as preset (preset.name)}
+    {@const isActive = adjustManager.activeFilter === preset.name}
     <button
       type="button"
-      class="flex flex-col items-center gap-1 flex-shrink-0 cursor-pointer"
+      class="flex flex-col items-center gap-1 cursor-pointer focus:outline-none"
       onclick={() => adjustManager.applyPreset(preset)}
     >
       <div
-        class="w-16 h-16 rounded-lg border-2 flex items-center justify-center text-xs font-medium transition-colors {adjustManager.activeFilter ===
-        preset.name
-          ? 'border-immich-primary dark:border-immich-dark-primary bg-immich-primary/10 dark:bg-immich-dark-primary/10'
-          : 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700'}"
+        class="w-full aspect-square rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 transition-all {isActive
+          ? 'ring-2 ring-immich-primary dark:ring-immich-dark-primary ring-offset-2 ring-offset-immich-bg dark:ring-offset-immich-dark-bg'
+          : 'ring-1 ring-gray-300 dark:ring-gray-600'}"
       >
-        <span class="text-immich-fg dark:text-immich-dark-fg">{preset.label.slice(0, 3)}</span>
+        {#if thumbnailUrl}
+          <img
+            src={thumbnailUrl}
+            alt={preset.label}
+            class="w-full h-full object-cover"
+            style:filter={cssFilterForAdjustValues(preset.values)}
+            draggable="false"
+          />
+        {:else}
+          <div class="w-full h-full flex items-center justify-center text-xs">{preset.label.slice(0, 3)}</div>
+        {/if}
       </div>
       <span
-        class="text-xs {adjustManager.activeFilter === preset.name
+        class="text-xs truncate w-full text-center {isActive
           ? 'text-immich-primary dark:text-immich-dark-primary font-medium'
           : 'text-immich-fg/70 dark:text-immich-dark-fg/70'}"
       >
