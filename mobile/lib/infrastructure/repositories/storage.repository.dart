@@ -12,7 +12,6 @@ class StorageRepository {
 
   Future<File?> getFileForAsset(String assetId) async {
     File? file;
-    final log = Logger('StorageRepository');
 
     try {
       final entity = await AssetEntity.fromId(assetId);
@@ -39,7 +38,6 @@ class StorageRepository {
 
   Future<File?> getMotionFileById(String assetId) async {
     File? file;
-    final log = Logger('StorageRepository');
 
     try {
       final entity = await AssetEntity.fromId(assetId);
@@ -61,8 +59,6 @@ class StorageRepository {
   }
 
   Future<AssetEntity?> getAssetEntityForAsset(LocalAsset asset) async {
-    final log = Logger('StorageRepository');
-
     AssetEntity? entity;
 
     try {
@@ -128,8 +124,6 @@ class StorageRepository {
   }
 
   Future<void> clearCache() async {
-    final log = Logger('StorageRepository');
-
     try {
       await PhotoManager.clearFileCache();
     } catch (error, stackTrace) {

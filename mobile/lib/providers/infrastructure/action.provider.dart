@@ -149,30 +149,24 @@ class ActionNotifier extends Notifier<void> {
     }
   }
 
-  Future<ActionResult> favorite(ActionSource source) async {
-    final ids = _getOwnedRemoteIdsForSource(source);
-    try {
-      await _service.favorite(ids);
-      if (source == ActionSource.viewer) {
-        await _refreshViewerAsset();
-      }
-      return ActionResult(count: ids.length, success: true);
-    } catch (error, stack) {
-      _logger.severe('Failed to favorite assets', error, stack);
-      return ActionResult(count: ids.length, success: false, error: error.toString());
-    }
-  }
+  Future<ActionResult> favorite(ActionSource source) => _toggleFavorite(source, isFavorite: true);
 
-  Future<ActionResult> unFavorite(ActionSource source) async {
+  Future<ActionResult> unFavorite(ActionSource source) => _toggleFavorite(source, isFavorite: false);
+
+  Future<ActionResult> _toggleFavorite(ActionSource source, {required bool isFavorite}) async {
     final ids = _getOwnedRemoteIdsForSource(source);
     try {
-      await _service.unFavorite(ids);
+      if (isFavorite) {
+        await _service.favorite(ids);
+      } else {
+        await _service.unFavorite(ids);
+      }
       if (source == ActionSource.viewer) {
         await _refreshViewerAsset();
       }
       return ActionResult(count: ids.length, success: true);
     } catch (error, stack) {
-      _logger.severe('Failed to unfavorite assets', error, stack);
+      _logger.severe('Failed to ${isFavorite ? '' : 'un'}favorite assets', error, stack);
       return ActionResult(count: ids.length, success: false, error: error.toString());
     }
   }
@@ -183,6 +177,8 @@ class ActionNotifier extends Notifier<void> {
       final updated = await _assetService.getRemoteAsset(currentAsset.id);
       if (updated != null) {
         ref.read(assetViewerProvider.notifier).setAsset(updated);
+      } else {
+        _logger.warning('Failed to refresh viewer asset: getRemoteAsset returned null for ${currentAsset.id}');
       }
     }
   }

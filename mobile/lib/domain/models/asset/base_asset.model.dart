@@ -47,6 +47,8 @@ sealed class BaseAsset {
   bool get isImage => type == AssetType.image;
   bool get isVideo => type == AssetType.video;
 
+  /// True for remote assets with a paired live-photo video ([livePhotoVideoId] != null)
+  /// and for local assets whose playback style was resolved to [AssetPlaybackStyle.livePhoto].
   bool get isMotionPhoto => playbackStyle == AssetPlaybackStyle.livePhoto;
   bool get isAnimatedImage => playbackStyle == AssetPlaybackStyle.imageAnimated;
 
