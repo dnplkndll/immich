@@ -943,12 +943,31 @@ export type RotateParameters = {
 export type MirrorParameters = {
     axis: MirrorAxis;
 };
+export type AdjustParameters = {
+    /** Brightness multiplier (1.0 = no change) */
+    brightness?: number;
+    /** Contrast multiplier (1.0 = no change) */
+    contrast?: number;
+    /** Hue rotation in degrees (0 = no change) */
+    hue?: number;
+    /** Saturation multiplier (1.0 = no change) */
+    saturation?: number;
+    /** Sharpness sigma (0 = no sharpening) */
+    sharpness?: number;
+};
+export type AutoEnhanceParameters = {};
+export type FilterParameters = {
+    /** Color matrix as a flat 4x5 array of 20 numbers (row-major) */
+    matrix: number[];
+    /** Name of the filter preset */
+    name: string;
+};
 export type AssetEditActionItemResponseDto = {
     action: AssetEditAction;
     /** Asset edit ID */
     id: string;
-    /** List of edit actions to apply (crop, rotate, or mirror) */
-    parameters: CropParameters | RotateParameters | MirrorParameters;
+    /** List of edit actions to apply (crop, rotate, mirror, adjust, auto-enhance, or filter) */
+    parameters: CropParameters | RotateParameters | MirrorParameters | AdjustParameters | AutoEnhanceParameters | FilterParameters;
 };
 export type AssetEditsResponseDto = {
     /** Asset ID these edits belong to */
@@ -958,11 +977,11 @@ export type AssetEditsResponseDto = {
 };
 export type AssetEditActionItemDto = {
     action: AssetEditAction;
-    /** List of edit actions to apply (crop, rotate, or mirror) */
-    parameters: CropParameters | RotateParameters | MirrorParameters;
+    /** List of edit actions to apply (crop, rotate, mirror, adjust, auto-enhance, or filter) */
+    parameters: CropParameters | RotateParameters | MirrorParameters | AdjustParameters | AutoEnhanceParameters | FilterParameters;
 };
 export type AssetEditsCreateDto = {
-    /** List of edit actions to apply (crop, rotate, or mirror) */
+    /** List of edit actions to apply (crop, rotate, mirror, adjust, auto-enhance, or filter) */
     edits: AssetEditActionItemDto[];
 };
 export type AssetMetadataResponseDto = {
@@ -6926,7 +6945,10 @@ export enum AssetTypeEnum {
 export enum AssetEditAction {
     Crop = "crop",
     Rotate = "rotate",
-    Mirror = "mirror"
+    Mirror = "mirror",
+    Adjust = "adjust",
+    AutoEnhance = "auto-enhance",
+    Filter = "filter"
 }
 export enum MirrorAxis {
     Horizontal = "horizontal",

@@ -146,7 +146,7 @@ export class MediaRepository {
   }
 
   private async applyEdits(pipeline: sharp.Sharp, edits: AssetEditActionItem[]): Promise<sharp.Sharp> {
-    const affineEditOperations = edits.filter((edit) => edit.action !== 'crop');
+    const affineEditOperations = edits.filter((edit) => edit.action === 'rotate' || edit.action === 'mirror');
     const matrix = createAffineMatrix(affineEditOperations);
 
     const crop = edits.find((edit) => edit.action === 'crop');
@@ -166,6 +166,33 @@ export class MediaRepository {
       [a, b],
       [c, d],
     ]);
+
+    const adjust = edits.find((edit) => edit.action === 'adjust');
+    if (adjust) {
+      const { brightness, saturation, hue, contrast, sharpness } = adjust.parameters;
+      pipeline = pipeline.modulate({ brightness, saturation, hue });
+      if (contrast !== 1) {
+        pipeline = pipeline.linear(contrast, -(128 * (contrast - 1)));
+      }
+      if (sharpness > 0) {
+        pipeline = pipeline.sharpen({ sigma: sharpness });
+      }
+    }
+
+    if (edits.some((edit) => edit.action === 'auto-enhance')) {
+      pipeline = pipeline.normalize().sharpen({ sigma: 1 });
+    }
+
+    const filter = edits.find((edit) => edit.action === 'filter');
+    if (filter) {
+      const m = filter.parameters.matrix;
+      // extract the 3x3 RGB submatrix (rows 0-2, cols 0-2) from the flat 4x5 color matrix
+      pipeline = pipeline.recomb([
+        [m[0], m[1], m[2]],
+        [m[5], m[6], m[7]],
+        [m[10], m[11], m[12]],
+      ]);
+    }
 
     return pipeline;
   }
