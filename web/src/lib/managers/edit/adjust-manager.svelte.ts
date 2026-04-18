@@ -94,6 +94,19 @@ class AdjustManager implements EditToolManager {
     }),
   );
 
+  // Debounced variant for driving large preview images: avoids
+  // recomputing browser filters on every slider tick.
+  cssFilterPreview = $state('none');
+  private _previewTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private schedulePreviewUpdate() {
+    if (this._previewTimer) clearTimeout(this._previewTimer);
+    this._previewTimer = setTimeout(() => {
+      this.cssFilterPreview = this.cssFilter;
+      this._previewTimer = null;
+    }, 100);
+  }
+
   private checkHasEdits(): boolean {
     return (
       this.brightness !== 0 ||
@@ -137,12 +150,14 @@ class AdjustManager implements EditToolManager {
     this.sharpness = preset.values.sharpness;
     this.isAutoEnhance = false;
     this.hasChanges = preset.name !== 'original';
+    this.schedulePreviewUpdate();
   }
 
   setAutoEnhance() {
     this.isAutoEnhance = true;
     this.activeFilter = '';
     this.hasChanges = true;
+    this.schedulePreviewUpdate();
   }
 
   setValue(key: keyof AdjustValues, value: number) {
@@ -150,6 +165,7 @@ class AdjustManager implements EditToolManager {
     this.isAutoEnhance = false;
     this.activeFilter = '';
     this.hasChanges = true;
+    this.schedulePreviewUpdate();
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
@@ -187,6 +203,12 @@ class AdjustManager implements EditToolManager {
 
   onDeactivate() {
     // Preserve slider state when switching tools — the derived `edits` keeps feeding the editor.
+    // Flush any pending debounced preview so a later re-activation starts from the latest values.
+    if (this._previewTimer) {
+      clearTimeout(this._previewTimer);
+      this._previewTimer = null;
+      this.cssFilterPreview = this.cssFilter;
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
@@ -199,6 +221,11 @@ class AdjustManager implements EditToolManager {
     this.isAutoEnhance = false;
     this.activeFilter = 'original';
     this.hasChanges = false;
+    if (this._previewTimer) {
+      clearTimeout(this._previewTimer);
+      this._previewTimer = null;
+    }
+    this.cssFilterPreview = this.cssFilter;
   }
 }
 

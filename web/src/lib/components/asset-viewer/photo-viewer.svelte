@@ -2,6 +2,7 @@
   import { shortcuts } from '$lib/actions/shortcut';
   import { zoomImageAction } from '$lib/actions/zoom-image';
   import AdaptiveImage from '$lib/components/AdaptiveImage.svelte';
+  import { adjustManager } from '$lib/managers/edit/adjust-manager.svelte';
   import FaceEditor from '$lib/components/asset-viewer/face-editor/face-editor.svelte';
   import Thumbhash from '$lib/components/Thumbhash.svelte';
   import OcrBoundingBox from '$lib/components/asset-viewer/ocr-bounding-box.svelte';
@@ -222,6 +223,7 @@
   onmouseleave={handleImageMouseLeave}
   use:zoomImageAction={{ zoomTarget: adaptiveImage }}
   {...useSwipe((event) => onSwipe?.(event))}
+  style:filter={assetViewerManager.isShowEditor ? adjustManager.cssFilterPreview : null}
 >
   <AdaptiveImage
     {asset}
