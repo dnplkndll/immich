@@ -153,6 +153,9 @@ class ActionNotifier extends Notifier<void> {
     final ids = _getOwnedRemoteIdsForSource(source);
     try {
       await _service.favorite(ids);
+      if (source == ActionSource.viewer) {
+        await _refreshViewerAsset();
+      }
       return ActionResult(count: ids.length, success: true);
     } catch (error, stack) {
       _logger.severe('Failed to favorite assets', error, stack);
@@ -164,10 +167,23 @@ class ActionNotifier extends Notifier<void> {
     final ids = _getOwnedRemoteIdsForSource(source);
     try {
       await _service.unFavorite(ids);
+      if (source == ActionSource.viewer) {
+        await _refreshViewerAsset();
+      }
       return ActionResult(count: ids.length, success: true);
     } catch (error, stack) {
       _logger.severe('Failed to unfavorite assets', error, stack);
       return ActionResult(count: ids.length, success: false, error: error.toString());
+    }
+  }
+
+  Future<void> _refreshViewerAsset() async {
+    final currentAsset = ref.read(assetViewerProvider).currentAsset;
+    if (currentAsset is RemoteAsset) {
+      final updated = await _assetService.getRemoteAsset(currentAsset.id);
+      if (updated != null) {
+        ref.read(assetViewerProvider.notifier).setAsset(updated);
+      }
     }
   }
 
