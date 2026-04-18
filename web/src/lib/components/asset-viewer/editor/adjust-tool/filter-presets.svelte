@@ -3,6 +3,7 @@
   import { editManager } from '$lib/managers/edit/edit-manager.svelte';
   import { getAssetMediaUrl } from '$lib/utils';
   import { AssetMediaSize } from '@immich/sdk';
+  import { t } from 'svelte-i18n';
 
   const thumbnailUrl = $derived(
     editManager.currentAsset
@@ -18,6 +19,7 @@
 <div class="grid grid-cols-4 gap-2 pb-2">
   {#each filterPresets as preset (preset.name)}
     {@const isActive = adjustManager.activeFilter === preset.name}
+    {@const label = $t(preset.labelKey)}
     <button
       type="button"
       class="flex flex-col items-center gap-1 cursor-pointer focus:outline-none"
@@ -31,13 +33,13 @@
         {#if thumbnailUrl}
           <img
             src={thumbnailUrl}
-            alt={preset.label}
+            alt={label}
             class="w-full h-full object-cover"
             style:filter={cssFilterForAdjustValues(preset.values)}
             draggable="false"
           />
         {:else}
-          <div class="w-full h-full flex items-center justify-center text-xs">{preset.label.slice(0, 3)}</div>
+          <div class="w-full h-full flex items-center justify-center text-xs">{label.slice(0, 3)}</div>
         {/if}
       </div>
       <span
@@ -45,7 +47,7 @@
           ? 'text-immich-primary dark:text-immich-dark-primary font-medium'
           : 'text-immich-fg/70 dark:text-immich-dark-fg/70'}"
       >
-        {preset.label}
+        {label}
       </span>
     </button>
   {/each}

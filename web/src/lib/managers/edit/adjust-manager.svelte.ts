@@ -1,5 +1,6 @@
 import { type EditActions, type EditToolManager } from '$lib/managers/edit/edit-manager.svelte';
 import { AssetEditAction, type AssetResponseDto } from '@immich/sdk';
+import type { Translations } from 'svelte-i18n';
 
 export interface AdjustValues {
   brightness: number;
@@ -11,7 +12,7 @@ export interface AdjustValues {
 
 export interface FilterPreset {
   name: string;
-  label: string;
+  labelKey: Translations;
   values: AdjustValues;
 }
 
@@ -26,26 +27,54 @@ const defaultValues: AdjustValues = {
 export const filterPresets: FilterPreset[] = [
   {
     name: 'original',
-    label: 'Original',
+    labelKey: 'adjust_preset_original',
     values: { brightness: 0, contrast: 0, saturation: 0, warmth: 0, sharpness: 0 },
   },
-  { name: 'vivid', label: 'Vivid', values: { brightness: 5, contrast: 15, saturation: 40, warmth: 0, sharpness: 10 } },
+  {
+    name: 'vivid',
+    labelKey: 'adjust_preset_vivid',
+    values: { brightness: 5, contrast: 15, saturation: 40, warmth: 0, sharpness: 10 },
+  },
   {
     name: 'dramatic',
-    label: 'Dramatic',
+    labelKey: 'adjust_preset_dramatic',
     values: { brightness: -10, contrast: 40, saturation: -10, warmth: 0, sharpness: 20 },
   },
-  { name: 'noir', label: 'Noir', values: { brightness: -5, contrast: 30, saturation: -100, warmth: 0, sharpness: 15 } },
-  { name: 'mono', label: 'Mono', values: { brightness: 0, contrast: 10, saturation: -100, warmth: 0, sharpness: 0 } },
-  { name: 'sepia', label: 'Sepia', values: { brightness: 5, contrast: 5, saturation: -50, warmth: 40, sharpness: 0 } },
-  { name: 'warm', label: 'Warm', values: { brightness: 5, contrast: 5, saturation: 10, warmth: 30, sharpness: 0 } },
-  { name: 'cool', label: 'Cool', values: { brightness: 0, contrast: 5, saturation: 5, warmth: -30, sharpness: 0 } },
+  {
+    name: 'noir',
+    labelKey: 'adjust_preset_noir',
+    values: { brightness: -5, contrast: 30, saturation: -100, warmth: 0, sharpness: 15 },
+  },
+  {
+    name: 'mono',
+    labelKey: 'adjust_preset_mono',
+    values: { brightness: 0, contrast: 10, saturation: -100, warmth: 0, sharpness: 0 },
+  },
+  {
+    name: 'sepia',
+    labelKey: 'adjust_preset_sepia',
+    values: { brightness: 5, contrast: 5, saturation: -50, warmth: 40, sharpness: 0 },
+  },
+  {
+    name: 'warm',
+    labelKey: 'adjust_preset_warm',
+    values: { brightness: 5, contrast: 5, saturation: 10, warmth: 30, sharpness: 0 },
+  },
+  {
+    name: 'cool',
+    labelKey: 'adjust_preset_cool',
+    values: { brightness: 0, contrast: 5, saturation: 5, warmth: -30, sharpness: 0 },
+  },
   {
     name: 'vintage',
-    label: 'Vintage',
+    labelKey: 'adjust_preset_vintage',
     values: { brightness: -5, contrast: -10, saturation: -30, warmth: 20, sharpness: 0 },
   },
-  { name: 'fade', label: 'Fade', values: { brightness: 10, contrast: -20, saturation: -20, warmth: 0, sharpness: 0 } },
+  {
+    name: 'fade',
+    labelKey: 'adjust_preset_fade',
+    values: { brightness: 10, contrast: -20, saturation: -20, warmth: 0, sharpness: 0 },
+  },
 ];
 
 // Map UI slider values (-100..+100) onto the server's sharp parameter ranges.
