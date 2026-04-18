@@ -1,5 +1,5 @@
 import { type EditActions, type EditToolManager } from '$lib/managers/edit/edit-manager.svelte';
-import type { AssetResponseDto } from '@immich/sdk';
+import { AssetEditAction, type AssetResponseDto } from '@immich/sdk';
 
 export interface AdjustValues {
   brightness: number;
@@ -120,7 +120,7 @@ class AdjustManager implements EditToolManager {
 
   private getEdits(): EditActions {
     if (this.isAutoEnhance) {
-      return [{ action: 'auto-enhance' as never, parameters: {} as never }];
+      return [{ action: AssetEditAction.AutoEnhance, parameters: {} }];
     }
 
     if (!this.checkHasEdits()) {
@@ -129,14 +129,14 @@ class AdjustManager implements EditToolManager {
 
     return [
       {
-        action: 'adjust' as never,
+        action: AssetEditAction.Adjust,
         parameters: {
           brightness: sliderToServerBrightness(this.brightness),
           contrast: sliderToServerContrast(this.contrast),
           saturation: sliderToServerSaturation(this.saturation),
           hue: sliderToServerHue(this.warmth),
           sharpness: sliderToServerSharpness(this.sharpness),
-        } as never,
+        },
       },
     ];
   }
@@ -174,9 +174,9 @@ class AdjustManager implements EditToolManager {
       return;
     }
 
-    const adjustEdit = edits.find((e) => (e.action as string) === 'adjust');
+    const adjustEdit = edits.find((e) => e.action === AssetEditAction.Adjust);
     if (adjustEdit) {
-      const params = adjustEdit.parameters as unknown as {
+      const params = adjustEdit.parameters as {
         brightness: number;
         contrast: number;
         saturation: number;
@@ -196,7 +196,7 @@ class AdjustManager implements EditToolManager {
       }
     }
 
-    if (edits.some((e) => (e.action as string) === 'auto-enhance')) {
+    if (edits.some((e) => e.action === AssetEditAction.AutoEnhance)) {
       this.isAutoEnhance = true;
     }
   }

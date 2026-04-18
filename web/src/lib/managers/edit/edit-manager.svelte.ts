@@ -109,10 +109,12 @@ export class EditManager {
     }
   }
 
-  cleanup() {
+  async cleanup() {
     for (const tool of this.tools) {
       tool.manager.onDeactivate?.();
+      await tool.manager.resetAllChanges();
     }
+    this.hasAppliedEdits = false;
     this.currentAsset = null;
     this.selectedTool = null;
   }
