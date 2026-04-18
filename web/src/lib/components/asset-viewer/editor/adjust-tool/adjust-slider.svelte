@@ -1,5 +1,6 @@
 <script lang="ts">
   interface Props {
+    id: string;
     label: string;
     value: number;
     min?: number;
@@ -8,7 +9,7 @@
     onChange: (value: number) => void;
   }
 
-  let { label, value, min = -100, max = 100, step = 1, onChange }: Props = $props();
+  let { id, label, value, min = -100, max = 100, step = 1, onChange }: Props = $props();
 
   const clamp = (n: number) => Math.min(max, Math.max(min, Math.round(n)));
 
@@ -26,9 +27,9 @@
 
 <div class="flex flex-col gap-1">
   <div class="flex items-center justify-between text-xs text-immich-fg dark:text-immich-dark-fg">
-    <label class="cursor-pointer" for="adjust-slider-{label}">{label}</label>
+    <label class="cursor-pointer" for="adjust-slider-{id}">{label}</label>
     <input
-      id="adjust-slider-{label}-num"
+      id="adjust-slider-{id}-num"
       type="number"
       {min}
       {max}
@@ -40,7 +41,7 @@
     />
   </div>
   <input
-    id="adjust-slider-{label}"
+    id="adjust-slider-{id}"
     type="range"
     {min}
     {max}

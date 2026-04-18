@@ -14,13 +14,13 @@
     min?: number;
   }
 
-  const sliders: SliderConfig[] = [
+  const sliders = $derived<SliderConfig[]>([
     { key: 'brightness', label: $t('brightness') },
     { key: 'contrast', label: $t('contrast') },
     { key: 'saturation', label: $t('saturation') },
     { key: 'warmth', label: $t('warmth') },
     { key: 'sharpness', label: $t('sharpness'), min: 0 },
-  ];
+  ]);
 
   let activeTab: Tab = $state('adjustments');
 </script>
@@ -63,6 +63,7 @@
     <div class="flex flex-col gap-3 mt-4">
       {#each sliders as slider (slider.key)}
         <AdjustSlider
+          id={slider.key}
           label={slider.label}
           value={adjustManager[slider.key]}
           min={slider.min}
