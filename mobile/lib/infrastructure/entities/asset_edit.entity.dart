@@ -34,6 +34,9 @@ extension AssetEditEntityDataDomainEx on AssetEditEntityData {
       AssetEditAction.crop => CropParameters.fromJson(parameters)?.let(CropEdit.new),
       AssetEditAction.rotate => RotateParameters.fromJson(parameters)?.let(RotateEdit.new),
       AssetEditAction.mirror => MirrorParameters.fromJson(parameters)?.let(MirrorEdit.new),
+      AssetEditAction.adjust => AdjustParameters.fromJson(parameters)?.let(AdjustEdit.new),
+      AssetEditAction.autoEnhance => const AutoEnhanceEdit(),
+      AssetEditAction.filter => FilterParameters.fromJson(parameters)?.let(FilterEdit.new),
       AssetEditAction.other => null,
     };
   }
