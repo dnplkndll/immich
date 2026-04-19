@@ -114,6 +114,7 @@ const video: Record<string, string[]> = {
   '.mpg': ['video/mpeg'],
   '.mts': ['video/mp2t'],
   '.mxf': ['application/mxf'],
+  '.qt': ['video/quicktime'],
   '.ts': ['video/mp2t'],
   '.vob': ['video/mpeg'],
   '.webm': ['video/webm'],
