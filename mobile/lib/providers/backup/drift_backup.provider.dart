@@ -7,6 +7,7 @@ import 'package:logging/logging.dart';
 import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/album/local_album.model.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
+import 'package:immich_mobile/infrastructure/repositories/backup.repository.dart';
 import 'package:immich_mobile/utils/upload_speed_calculator.dart';
 import 'package:immich_mobile/providers/infrastructure/asset.provider.dart';
 import 'package:immich_mobile/providers/user.provider.dart';
@@ -183,13 +184,18 @@ final driftBackupProvider = StateNotifierProvider<DriftBackupNotifier, DriftBack
   return DriftBackupNotifier(
     ref.watch(foregroundUploadServiceProvider),
     ref.watch(backgroundUploadServiceProvider),
+    ref.watch(backupRepositoryProvider),
     UploadSpeedManager(),
   );
 });
 
 class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
-  DriftBackupNotifier(this._foregroundUploadService, this._backgroundUploadService, this._uploadSpeedManager)
-    : super(
+  DriftBackupNotifier(
+    this._foregroundUploadService,
+    this._backgroundUploadService,
+    this._backupRepository,
+    this._uploadSpeedManager,
+  ) : super(
         const DriftBackupState(
           totalCount: 0,
           backupCount: 0,
@@ -203,6 +209,7 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
 
   final ForegroundUploadService _foregroundUploadService;
   final BackgroundUploadService _backgroundUploadService;
+  final DriftBackupRepository _backupRepository;
   final UploadSpeedManager _uploadSpeedManager;
   Completer<void>? _cancelToken;
 
@@ -332,6 +339,11 @@ class DriftBackupNotifier extends StateNotifier<DriftBackupState> {
   void _handleForegroundBackupSuccess(String localAssetId, String remoteAssetId) {
     state = state.copyWith(backupCount: state.backupCount + 1, remainderCount: state.remainderCount - 1);
     _uploadSpeedManager.removeTask(localAssetId);
+
+    // Persist the link between local and remote asset (fire-and-forget; non-critical)
+    _backupRepository
+        .storeRemoteId(localAssetId, remoteAssetId)
+        .catchError((e) => _logger.warning('Failed to store remoteId for $localAssetId', e));
 
     Future.delayed(const Duration(milliseconds: 1000), () {
       _removeUploadItem(localAssetId);
