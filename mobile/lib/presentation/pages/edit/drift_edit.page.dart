@@ -6,16 +6,20 @@ import 'package:crop_image/crop_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/constants/adjustments.dart';
 import 'package:immich_mobile/constants/aspect_ratios.dart';
 import 'package:immich_mobile/domain/models/asset_edit.model.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
 import 'package:immich_mobile/presentation/pages/edit/editor.provider.dart';
+import 'package:immich_mobile/presentation/widgets/editing/adjust_panel.dart';
 import 'package:immich_mobile/providers/theme.provider.dart';
 import 'package:immich_mobile/theme/theme_data.dart';
 import 'package:immich_mobile/utils/editor.utils.dart';
 import 'package:immich_mobile/widgets/common/immich_toast.dart';
 import 'package:immich_ui/immich_ui.dart';
-import 'package:openapi/api.dart' show RotateParameters, MirrorParameters, MirrorAxis;
+import 'package:openapi/api.dart' show AdjustParameters, MirrorAxis, MirrorParameters, RotateParameters;
+
+enum _EditorTool { transform, adjust }
 
 @RoutePage()
 class DriftEditImagePage extends ConsumerStatefulWidget {
@@ -29,6 +33,8 @@ class DriftEditImagePage extends ConsumerStatefulWidget {
 }
 
 class _DriftEditImagePageState extends ConsumerState<DriftEditImagePage> with TickerProviderStateMixin {
+  _EditorTool _activeTool = _EditorTool.transform;
+
   Future<void> _saveEditedImage() async {
     ref.read(editorStateProvider.notifier).setIsEditing(true);
 
@@ -55,6 +61,23 @@ class _DriftEditImagePageState extends ConsumerState<DriftEditImagePage> with Ti
     final normalizedRotation = (editorState.rotationAngle % 360 + 360) % 360;
     if (normalizedRotation != 0) {
       edits.add(RotateEdit(RotateParameters(angle: normalizedRotation)));
+    }
+
+    if (editorState.isAutoEnhance) {
+      edits.add(const AutoEnhanceEdit());
+    } else if (editorState.adjustValues.hasChanges) {
+      final v = editorState.adjustValues;
+      edits.add(
+        AdjustEdit(
+          AdjustParameters(
+            brightness: sliderToMultiplier(v.brightness),
+            contrast: sliderToMultiplier(v.contrast),
+            saturation: sliderToMultiplier(v.saturation),
+            hue: warmthToHue(v.warmth),
+            sharpness: sliderToSharpness(v.sharpness),
+          ),
+        ),
+      );
     }
 
     try {
@@ -115,7 +138,12 @@ class _DriftEditImagePageState extends ConsumerState<DriftEditImagePage> with Ti
             bottom: false,
             child: Column(
               children: [
-                Expanded(child: _EditorPreview(image: widget.image)),
+                Expanded(
+                  child: _EditorPreview(
+                    image: widget.image,
+                    showAdjustments: _activeTool == _EditorTool.adjust,
+                  ),
+                ),
                 AnimatedSize(
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeInOut,
@@ -130,11 +158,35 @@ class _DriftEditImagePageState extends ConsumerState<DriftEditImagePage> with Ti
                         topRight: Radius.circular(20),
                       ),
                     ),
-                    child: const Column(
+                    child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _TransformControls(),
                         Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: SegmentedButton<_EditorTool>(
+                            showSelectedIcon: false,
+                            segments: [
+                              ButtonSegment(
+                                value: _EditorTool.transform,
+                                icon: const Icon(Icons.crop_rotate),
+                                label: Text('transform'.tr()),
+                              ),
+                              ButtonSegment(
+                                value: _EditorTool.adjust,
+                                icon: const Icon(Icons.tune),
+                                label: Text('adjust'.tr()),
+                              ),
+                            ],
+                            selected: <_EditorTool>{_activeTool},
+                            onSelectionChanged: (s) => setState(() => _activeTool = s.first),
+                          ),
+                        ),
+                        IndexedStack(
+                          index: _activeTool.index,
+                          sizing: StackFit.loose,
+                          children: const [_TransformControls(), AdjustPanel()],
+                        ),
+                        const Padding(
                           padding: EdgeInsets.only(bottom: 36, left: 24, right: 24),
                           child: Row(children: [Spacer(), _ResetEditsButton()]),
                         ),
@@ -316,8 +368,9 @@ class _ResetEditsButton extends ConsumerWidget {
 
 class _EditorPreview extends ConsumerStatefulWidget {
   final Image image;
+  final bool showAdjustments;
 
-  const _EditorPreview({required this.image});
+  const _EditorPreview({required this.image, this.showAdjustments = false});
 
   @override
   ConsumerState<_EditorPreview> createState() => _EditorPreviewState();
@@ -388,7 +441,16 @@ class _EditorPreviewState extends ConsumerState<_EditorPreview> with TickerProvi
                 padding: const EdgeInsets.all(10),
                 width: (editorState.rotationAngle % 180 == 0) ? baseWidth : baseHeight,
                 height: (editorState.rotationAngle % 180 == 0) ? baseHeight : baseWidth,
-                child: CropImage(controller: cropController, image: widget.image, gridColor: Colors.white),
+                child: widget.showAdjustments
+                    ? ColorFiltered(
+                        colorFilter: adjustValuesToColorFilter(editorState.adjustValues),
+                        child: CropImage(
+                          controller: cropController,
+                          image: widget.image,
+                          gridColor: Colors.transparent,
+                        ),
+                      )
+                    : CropImage(controller: cropController, image: widget.image, gridColor: Colors.white),
               ),
             ),
           ),

@@ -113,6 +113,18 @@ extension on AssetEdit {
         action: AssetEditAction.mirror,
         parameters: parameters.toJson(),
       ),
+      AdjustEdit(:final parameters) => AssetEditActionItemDto(
+        action: AssetEditAction.adjust,
+        parameters: parameters.toJson(),
+      ),
+      AutoEnhanceEdit() => AssetEditActionItemDto(
+        action: AssetEditAction.autoEnhance,
+        parameters: <String, dynamic>{},
+      ),
+      FilterEdit(:final parameters) => AssetEditActionItemDto(
+        action: AssetEditAction.filter,
+        parameters: parameters.toJson(),
+      ),
     };
   }
 }

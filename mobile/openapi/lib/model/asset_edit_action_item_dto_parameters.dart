@@ -19,6 +19,13 @@ class AssetEditActionItemDtoParameters {
     required this.y,
     required this.angle,
     required this.axis,
+    this.brightness = 1,
+    this.contrast = 1,
+    this.hue = 0,
+    this.saturation = 1,
+    this.sharpness = 0,
+    this.matrix = const [],
+    required this.name,
   });
 
   /// Height of the crop
@@ -46,6 +53,42 @@ class AssetEditActionItemDtoParameters {
 
   MirrorAxis axis;
 
+  /// Brightness multiplier (1.0 = no change)
+  ///
+  /// Minimum value: 0
+  /// Maximum value: 2
+  num brightness;
+
+  /// Contrast multiplier (1.0 = no change)
+  ///
+  /// Minimum value: 0
+  /// Maximum value: 2
+  num contrast;
+
+  /// Hue rotation in degrees (0 = no change)
+  ///
+  /// Minimum value: 0
+  /// Maximum value: 360
+  num hue;
+
+  /// Saturation multiplier (1.0 = no change)
+  ///
+  /// Minimum value: 0
+  /// Maximum value: 2
+  num saturation;
+
+  /// Sharpness sigma (0 = no sharpening)
+  ///
+  /// Minimum value: 0
+  /// Maximum value: 2
+  num sharpness;
+
+  /// Color matrix as a flat 4x5 array of 20 numbers (row-major)
+  List<num> matrix;
+
+  /// Name of the filter preset
+  String name;
+
   @override
   bool operator ==(Object other) => identical(this, other) || other is AssetEditActionItemDtoParameters &&
     other.height == height &&
@@ -53,7 +96,14 @@ class AssetEditActionItemDtoParameters {
     other.x == x &&
     other.y == y &&
     other.angle == angle &&
-    other.axis == axis;
+    other.axis == axis &&
+    other.brightness == brightness &&
+    other.contrast == contrast &&
+    other.hue == hue &&
+    other.saturation == saturation &&
+    other.sharpness == sharpness &&
+    _deepEquality.equals(other.matrix, matrix) &&
+    other.name == name;
 
   @override
   int get hashCode =>
@@ -63,10 +113,17 @@ class AssetEditActionItemDtoParameters {
     (x.hashCode) +
     (y.hashCode) +
     (angle.hashCode) +
-    (axis.hashCode);
+    (axis.hashCode) +
+    (brightness.hashCode) +
+    (contrast.hashCode) +
+    (hue.hashCode) +
+    (saturation.hashCode) +
+    (sharpness.hashCode) +
+    (matrix.hashCode) +
+    (name.hashCode);
 
   @override
-  String toString() => 'AssetEditActionItemDtoParameters[height=$height, width=$width, x=$x, y=$y, angle=$angle, axis=$axis]';
+  String toString() => 'AssetEditActionItemDtoParameters[height=$height, width=$width, x=$x, y=$y, angle=$angle, axis=$axis, brightness=$brightness, contrast=$contrast, hue=$hue, saturation=$saturation, sharpness=$sharpness, matrix=$matrix, name=$name]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -76,6 +133,13 @@ class AssetEditActionItemDtoParameters {
       json[r'y'] = this.y;
       json[r'angle'] = this.angle;
       json[r'axis'] = this.axis;
+      json[r'brightness'] = this.brightness;
+      json[r'contrast'] = this.contrast;
+      json[r'hue'] = this.hue;
+      json[r'saturation'] = this.saturation;
+      json[r'sharpness'] = this.sharpness;
+      json[r'matrix'] = this.matrix;
+      json[r'name'] = this.name;
     return json;
   }
 
@@ -94,6 +158,15 @@ class AssetEditActionItemDtoParameters {
         y: num.parse('${json[r'y']}'),
         angle: num.parse('${json[r'angle']}'),
         axis: MirrorAxis.fromJson(json[r'axis'])!,
+        brightness: num.parse('${json[r'brightness']}'),
+        contrast: num.parse('${json[r'contrast']}'),
+        hue: num.parse('${json[r'hue']}'),
+        saturation: num.parse('${json[r'saturation']}'),
+        sharpness: num.parse('${json[r'sharpness']}'),
+        matrix: json[r'matrix'] is Iterable
+            ? (json[r'matrix'] as Iterable).cast<num>().toList(growable: false)
+            : const [],
+        name: mapValueOfType<String>(json, r'name')!,
       );
     }
     return null;
@@ -147,6 +220,8 @@ class AssetEditActionItemDtoParameters {
     'y',
     'angle',
     'axis',
+    'matrix',
+    'name',
   };
 }
 

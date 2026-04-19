@@ -15255,6 +15255,46 @@
         ],
         "type": "object"
       },
+      "AdjustParameters": {
+        "properties": {
+          "brightness": {
+            "default": 1,
+            "description": "Brightness multiplier (1.0 = no change)",
+            "maximum": 2,
+            "minimum": 0,
+            "type": "number"
+          },
+          "contrast": {
+            "default": 1,
+            "description": "Contrast multiplier (1.0 = no change)",
+            "maximum": 2,
+            "minimum": 0,
+            "type": "number"
+          },
+          "hue": {
+            "default": 0,
+            "description": "Hue rotation in degrees (0 = no change)",
+            "maximum": 360,
+            "minimum": 0,
+            "type": "number"
+          },
+          "saturation": {
+            "default": 1,
+            "description": "Saturation multiplier (1.0 = no change)",
+            "maximum": 2,
+            "minimum": 0,
+            "type": "number"
+          },
+          "sharpness": {
+            "default": 0,
+            "description": "Sharpness sigma (0 = no sharpening)",
+            "maximum": 2,
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
       "AdminOnboardingUpdateDto": {
         "properties": {
           "isOnboarded": {
@@ -15839,7 +15879,10 @@
         "enum": [
           "crop",
           "rotate",
-          "mirror"
+          "mirror",
+          "adjust",
+          "auto-enhance",
+          "filter"
         ],
         "type": "string"
       },
@@ -15858,9 +15901,18 @@
               },
               {
                 "$ref": "#/components/schemas/MirrorParameters"
+              },
+              {
+                "$ref": "#/components/schemas/AdjustParameters"
+              },
+              {
+                "$ref": "#/components/schemas/AutoEnhanceParameters"
+              },
+              {
+                "$ref": "#/components/schemas/FilterParameters"
               }
             ],
-            "description": "List of edit actions to apply (crop, rotate, or mirror)"
+            "description": "List of edit actions to apply (crop, rotate, mirror, adjust, auto-enhance, or filter)"
           }
         },
         "required": [
@@ -15890,9 +15942,18 @@
               },
               {
                 "$ref": "#/components/schemas/MirrorParameters"
+              },
+              {
+                "$ref": "#/components/schemas/AdjustParameters"
+              },
+              {
+                "$ref": "#/components/schemas/AutoEnhanceParameters"
+              },
+              {
+                "$ref": "#/components/schemas/FilterParameters"
               }
             ],
-            "description": "List of edit actions to apply (crop, rotate, or mirror)"
+            "description": "List of edit actions to apply (crop, rotate, mirror, adjust, auto-enhance, or filter)"
           }
         },
         "required": [
@@ -15905,7 +15966,7 @@
       "AssetEditsCreateDto": {
         "properties": {
           "edits": {
-            "description": "List of edit actions to apply (crop, rotate, or mirror)",
+            "description": "List of edit actions to apply (crop, rotate, mirror, adjust, auto-enhance, or filter)",
             "items": {
               "$ref": "#/components/schemas/AssetEditActionItemDto"
             },
@@ -16954,6 +17015,10 @@
         ],
         "type": "object"
       },
+      "AutoEnhanceParameters": {
+        "properties": {},
+        "type": "object"
+      },
       "AvatarUpdate": {
         "properties": {
           "color": {
@@ -17798,6 +17863,28 @@
           "minFaces",
           "minScore",
           "modelName"
+        ],
+        "type": "object"
+      },
+      "FilterParameters": {
+        "properties": {
+          "matrix": {
+            "description": "Color matrix as a flat 4x5 array of 20 numbers (row-major)",
+            "items": {
+              "type": "number"
+            },
+            "maxItems": 20,
+            "minItems": 20,
+            "type": "array"
+          },
+          "name": {
+            "description": "Name of the filter preset",
+            "type": "string"
+          }
+        },
+        "required": [
+          "matrix",
+          "name"
         ],
         "type": "object"
       },

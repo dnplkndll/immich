@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/constants/adjustments.dart';
 import 'package:immich_mobile/domain/models/asset_edit.model.dart';
 import 'package:immich_mobile/domain/models/exif.model.dart';
 import 'package:immich_mobile/utils/editor.utils.dart';
@@ -20,6 +21,8 @@ class EditorProvider extends Notifier<EditorState> {
     clear();
 
     final existingCrop = edits.whereType<CropEdit>().firstOrNull;
+    final existingAdjust = edits.whereType<AdjustEdit>().firstOrNull;
+    final hasAutoEnhance = edits.whereType<AutoEnhanceEdit>().isNotEmpty;
 
     final originalWidth = exifInfo.isFlipped ? exifInfo.height : exifInfo.width;
     final originalHeight = exifInfo.isFlipped ? exifInfo.width : exifInfo.height;
@@ -36,9 +39,23 @@ class EditorProvider extends Notifier<EditorState> {
       crop: crop,
       flipHorizontal: transform.mirrorHorizontal,
       flipVertical: transform.mirrorVertical,
+      adjustValues: existingAdjust != null ? _adjustValuesFromServer(existingAdjust) : null,
+      isAutoEnhance: hasAutoEnhance,
     );
 
     _animateRotation(transform.rotation.toInt(), duration: Duration.zero);
+  }
+
+  static AdjustValues _adjustValuesFromServer(AdjustEdit edit) {
+    final p = edit.parameters;
+    final sharpness = p.sharpness.toDouble() / 2 * 100;
+    return AdjustValues(
+      brightness: (p.brightness.toDouble() - 1) * 100,
+      contrast: (p.contrast.toDouble() - 1) * 100,
+      saturation: (p.saturation.toDouble() - 1) * 100,
+      warmth: hueToWarmth(p.hue.toDouble()).clamp(-100.0, 100.0),
+      sharpness: sharpness.clamp(0.0, 100.0),
+    );
   }
 
   void _animateRotation(int angle, {Duration duration = const Duration(milliseconds: 300)}) {
@@ -108,6 +125,37 @@ class EditorProvider extends Notifier<EditorState> {
       state = state.copyWith(flipVertical: !state.flipVertical, hasUnsavedEdits: true);
     }
   }
+
+  void setAdjustValues(AdjustValues values) {
+    state = state.copyWith(adjustValues: values, isAutoEnhance: false, activeFilterName: null, hasUnsavedEdits: true);
+  }
+
+  void applyAdjustPreset(AdjustPreset preset) {
+    state = state.copyWith(
+      adjustValues: preset.values,
+      isAutoEnhance: false,
+      activeFilterName: preset.labelKey,
+      hasUnsavedEdits: true,
+    );
+  }
+
+  void applyAutoEnhance() {
+    state = state.copyWith(
+      adjustValues: autoEnhanceValues,
+      isAutoEnhance: true,
+      activeFilterName: null,
+      hasUnsavedEdits: true,
+    );
+  }
+
+  void resetAdjustments() {
+    state = state.copyWith(
+      adjustValues: const AdjustValues(),
+      isAutoEnhance: false,
+      activeFilterName: null,
+      hasUnsavedEdits: true,
+    );
+  }
 }
 
 class EditorState {
@@ -126,6 +174,10 @@ class EditorState {
 
   final bool hasUnsavedEdits;
 
+  final AdjustValues adjustValues;
+  final bool isAutoEnhance;
+  final String? activeFilterName;
+
   const EditorState({
     bool? isApplyingEdits,
     int? rotationAngle,
@@ -137,6 +189,9 @@ class EditorState {
     int? originalHeight,
     Duration? animationDuration,
     bool? hasUnsavedEdits,
+    AdjustValues? adjustValues,
+    bool? isAutoEnhance,
+    this.activeFilterName,
   }) : isApplyingEdits = isApplyingEdits ?? false,
        rotationAngle = rotationAngle ?? 0,
        flipHorizontal = flipHorizontal ?? false,
@@ -145,7 +200,9 @@ class EditorState {
        originalWidth = originalWidth ?? 0,
        originalHeight = originalHeight ?? 0,
        crop = crop ?? const Rect.fromLTRB(0, 0, 1, 1),
-       hasUnsavedEdits = hasUnsavedEdits ?? false;
+       hasUnsavedEdits = hasUnsavedEdits ?? false,
+       adjustValues = adjustValues ?? const AdjustValues(),
+       isAutoEnhance = isAutoEnhance ?? false;
 
   EditorState copyWith({
     bool? isApplyingEdits,
@@ -158,6 +215,9 @@ class EditorState {
     Duration? animationDuration,
     Rect? crop,
     bool? hasUnsavedEdits,
+    AdjustValues? adjustValues,
+    bool? isAutoEnhance,
+    Object? activeFilterName = _sentinel,
   }) {
     return EditorState(
       isApplyingEdits: isApplyingEdits ?? this.isApplyingEdits,
@@ -170,11 +230,19 @@ class EditorState {
       originalHeight: originalHeight ?? this.originalHeight,
       crop: crop ?? this.crop,
       hasUnsavedEdits: hasUnsavedEdits ?? this.hasUnsavedEdits,
+      adjustValues: adjustValues ?? this.adjustValues,
+      isAutoEnhance: isAutoEnhance ?? this.isAutoEnhance,
+      activeFilterName: identical(activeFilterName, _sentinel) ? this.activeFilterName : activeFilterName as String?,
     );
   }
 
   bool get hasEdits {
-    return rotationAngle != 0 || flipHorizontal || flipVertical || crop != const Rect.fromLTRB(0, 0, 1, 1);
+    return rotationAngle != 0 ||
+        flipHorizontal ||
+        flipVertical ||
+        crop != const Rect.fromLTRB(0, 0, 1, 1) ||
+        adjustValues.hasChanges ||
+        isAutoEnhance;
   }
 
   @override
@@ -191,7 +259,10 @@ class EditorState {
         other.originalWidth == originalWidth &&
         other.originalHeight == originalHeight &&
         other.animationDuration == animationDuration &&
-        other.hasUnsavedEdits == hasUnsavedEdits;
+        other.hasUnsavedEdits == hasUnsavedEdits &&
+        other.adjustValues == adjustValues &&
+        other.isAutoEnhance == isAutoEnhance &&
+        other.activeFilterName == activeFilterName;
   }
 
   @override
@@ -205,6 +276,11 @@ class EditorState {
         originalWidth.hashCode ^
         originalHeight.hashCode ^
         animationDuration.hashCode ^
-        hasUnsavedEdits.hashCode;
+        hasUnsavedEdits.hashCode ^
+        adjustValues.hashCode ^
+        isAutoEnhance.hashCode ^
+        activeFilterName.hashCode;
   }
 }
+
+const _sentinel = Object();
