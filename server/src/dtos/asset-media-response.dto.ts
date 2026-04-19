@@ -49,5 +49,14 @@ const AssetBulkUploadCheckResponseSchema = z
   })
   .meta({ id: 'AssetBulkUploadCheckResponseDto' });
 
+const CheckExistingAssetsByMetadataResponseSchema = z
+  .object({
+    existingIdMap: z
+      .record(z.string(), z.string())
+      .describe('Map of local asset ID to server asset UUID for matched assets'),
+  })
+  .meta({ id: 'CheckExistingAssetsByMetadataResponseDto' });
+
 export class AssetMediaResponseDto extends createZodDto(AssetMediaResponseSchema) {}
 export class AssetBulkUploadCheckResponseDto extends createZodDto(AssetBulkUploadCheckResponseSchema) {}
+export class CheckExistingAssetsByMetadataResponseDto extends createZodDto(CheckExistingAssetsByMetadataResponseSchema) {}

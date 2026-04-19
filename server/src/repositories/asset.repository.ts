@@ -591,6 +591,44 @@ export class AssetRepository {
       .execute();
   }
 
+  async getByMetadata(
+    ownerId: string,
+    items: Array<{ localId: string; fileCreatedAt: Date; width: number; height: number }>,
+  ): Promise<Array<{ localId: string; id: string }>> {
+    const results: Array<{ localId: string; id: string }> = [];
+
+    for (const item of items) {
+      // Match on EXIF dateTimeOriginal (cross-device stable) within ±2s, plus
+      // orientation-agnostic dimensions — iOS reports portrait as WxH (3024x4032)
+      // while EXIF stores landscape (4032x3024) with a rotation flag, so we
+      // compare the short/long sides instead of raw width/height.
+      const dateLow = new Date(item.fileCreatedAt.getTime() - 2000);
+      const dateHigh = new Date(item.fileCreatedAt.getTime() + 2000);
+      const shortSide = Math.min(item.width, item.height);
+      const longSide = Math.max(item.width, item.height);
+
+      const match = await this.db
+        .selectFrom('asset')
+        .innerJoin('asset_exif', 'asset.id', 'asset_exif.assetId')
+        .select(['asset.id'])
+        .where('asset.ownerId', '=', asUuid(ownerId))
+        .where('asset_exif.dateTimeOriginal', '>=', dateLow)
+        .where('asset_exif.dateTimeOriginal', '<=', dateHigh)
+        .where(sql<boolean>`LEAST("asset_exif"."exifImageWidth", "asset_exif"."exifImageHeight") = ${shortSide}`)
+        .where(sql<boolean>`GREATEST("asset_exif"."exifImageWidth", "asset_exif"."exifImageHeight") = ${longSide}`)
+        .where('asset.deletedAt', 'is', null)
+        .orderBy('asset.id')
+        .limit(1)
+        .executeTakeFirst();
+
+      if (match) {
+        results.push({ localId: item.localId, id: match.id });
+      }
+    }
+
+    return results;
+  }
+
   @GenerateSql({ params: [DummyValue.UUID, DummyValue.BUFFER] })
   async getUploadAssetIdByChecksum(ownerId: string, checksum: Buffer): Promise<string | undefined> {
     const asset = await this.db

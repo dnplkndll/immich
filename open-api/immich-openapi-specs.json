@@ -3146,6 +3146,62 @@
         "x-immich-state": "Stable"
       }
     },
+    "/assets/exist/metadata": {
+      "post": {
+        "description": "Matches candidate assets against server assets by EXIF dateTimeOriginal (±2s) and orientation-agnostic image dimensions. Used by mobile clients to skip hashing files that are already on the server even when device asset IDs do not line up (e.g., CLI uploads from a different device).",
+        "operationId": "checkExistingAssetsByMetadata",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckExistingAssetsByMetadataDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckExistingAssetsByMetadataResponseDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "summary": "Check existing assets by metadata",
+        "tags": [
+          "Assets"
+        ],
+        "x-immich-history": [
+          {
+            "version": "v1",
+            "state": "Added"
+          },
+          {
+            "version": "v1",
+            "state": "Beta"
+          }
+        ],
+        "x-immich-permission": "asset.upload",
+        "x-immich-state": "Beta"
+      }
+    },
     "/assets/jobs": {
       "post": {
         "description": "Run a specific job on a set of assets.",
@@ -17147,6 +17203,71 @@
         "required": [
           "newPassword",
           "password"
+        ],
+        "type": "object"
+      },
+      "CheckExistingAssetsByMetadataDto": {
+        "properties": {
+          "assets": {
+            "description": "Assets to check by metadata",
+            "items": {
+              "$ref": "#/components/schemas/CheckExistingAssetsByMetadataItem"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "assets"
+        ],
+        "type": "object"
+      },
+      "CheckExistingAssetsByMetadataItem": {
+        "properties": {
+          "fileCreatedAt": {
+            "description": "File creation date (from EXIF or photo library)",
+            "example": "2024-01-01T00:00:00.000Z",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+            "type": "string"
+          },
+          "height": {
+            "description": "Image/video height in pixels",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "localId": {
+            "description": "Local asset ID (client-side identifier)",
+            "minLength": 1,
+            "type": "string"
+          },
+          "width": {
+            "description": "Image/video width in pixels",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "fileCreatedAt",
+          "height",
+          "localId",
+          "width"
+        ],
+        "type": "object"
+      },
+      "CheckExistingAssetsByMetadataResponseDto": {
+        "properties": {
+          "existingIdMap": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Map of local asset ID to server asset UUID for matched assets",
+            "type": "object"
+          }
+        },
+        "required": [
+          "existingIdMap"
         ],
         "type": "object"
       },

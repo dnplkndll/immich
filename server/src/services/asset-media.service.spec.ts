@@ -832,6 +832,53 @@ describe(AssetMediaService.name, () => {
     });
   });
 
+  describe('checkExistingAssetsByMetadata', () => {
+    const baseItem = {
+      localId: 'local-1',
+      fileCreatedAt: new Date('2025-01-01T12:00:00Z'),
+      width: 4032,
+      height: 3024,
+    };
+
+    it('should return an empty map when the repo finds no matches', async () => {
+      mocks.asset.getByMetadata.mockResolvedValue([]);
+
+      await expect(
+        sut.checkExistingAssetsByMetadata(authStub.admin, { assets: [baseItem] }),
+      ).resolves.toEqual({ existingIdMap: {} });
+
+      expect(mocks.asset.getByMetadata).toHaveBeenCalledWith(authStub.admin.user.id, [baseItem]);
+    });
+
+    it('should map matched localIds to server asset UUIDs', async () => {
+      mocks.asset.getByMetadata.mockResolvedValue([
+        { localId: 'local-1', id: 'server-uuid-1' },
+        { localId: 'local-2', id: 'server-uuid-2' },
+      ]);
+
+      await expect(
+        sut.checkExistingAssetsByMetadata(authStub.admin, {
+          assets: [baseItem, { ...baseItem, localId: 'local-2' }],
+        }),
+      ).resolves.toEqual({
+        existingIdMap: {
+          'local-1': 'server-uuid-1',
+          'local-2': 'server-uuid-2',
+        },
+      });
+    });
+
+    it('should only include matched items in the response', async () => {
+      mocks.asset.getByMetadata.mockResolvedValue([{ localId: 'local-2', id: 'server-uuid-2' }]);
+
+      await expect(
+        sut.checkExistingAssetsByMetadata(authStub.admin, {
+          assets: [baseItem, { ...baseItem, localId: 'local-2' }],
+        }),
+      ).resolves.toEqual({ existingIdMap: { 'local-2': 'server-uuid-2' } });
+    });
+  });
+
   describe('onUploadError', () => {
     it('should queue a job to delete the uploaded file', async () => {
       const request = {

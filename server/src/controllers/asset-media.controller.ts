@@ -21,12 +21,14 @@ import {
   AssetBulkUploadCheckResponseDto,
   AssetMediaResponseDto,
   AssetMediaStatus,
+  CheckExistingAssetsByMetadataResponseDto,
 } from 'src/dtos/asset-media-response.dto';
 import {
   AssetBulkUploadCheckDto,
   AssetMediaCreateDto,
   AssetMediaOptionsDto,
   AssetMediaSize,
+  CheckExistingAssetsByMetadataDto,
 } from 'src/dtos/asset-media.dto';
 import { AssetDownloadOriginalDto } from 'src/dtos/asset.dto';
 import { AuthDto } from 'src/dtos/auth.dto';
@@ -175,6 +177,22 @@ export class AssetMediaController {
     @Next() next: NextFunction,
   ) {
     await sendFile(res, next, () => this.service.playbackVideo(auth, id), this.logger);
+  }
+
+  @Post('exist/metadata')
+  @Authenticated({ permission: Permission.AssetUpload })
+  @Endpoint({
+    summary: 'Check existing assets by metadata',
+    description:
+      'Matches candidate assets against server assets by EXIF dateTimeOriginal (±2s) and orientation-agnostic image dimensions. Used by mobile clients to skip hashing files that are already on the server even when device asset IDs do not line up (e.g., CLI uploads from a different device).',
+    history: new HistoryBuilder().added('v1').beta('v1'),
+  })
+  @HttpCode(HttpStatus.OK)
+  checkExistingAssetsByMetadata(
+    @Auth() auth: AuthDto,
+    @Body() dto: CheckExistingAssetsByMetadataDto,
+  ): Promise<CheckExistingAssetsByMetadataResponseDto> {
+    return this.service.checkExistingAssetsByMetadata(auth, dto);
   }
 
   @Post('bulk-upload-check')

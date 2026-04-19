@@ -702,6 +702,26 @@ export type AssetCopyDto = {
     /** Target asset ID */
     targetId: string;
 };
+export type CheckExistingAssetsByMetadataItem = {
+    /** File creation date (from EXIF or photo library) */
+    fileCreatedAt: string;
+    /** Image/video height in pixels */
+    height: number;
+    /** Local asset ID (client-side identifier) */
+    localId: string;
+    /** Image/video width in pixels */
+    width: number;
+};
+export type CheckExistingAssetsByMetadataDto = {
+    /** Assets to check by metadata */
+    assets: CheckExistingAssetsByMetadataItem[];
+};
+export type CheckExistingAssetsByMetadataResponseDto = {
+    /** Map of local asset ID to server asset UUID for matched assets */
+    existingIdMap: {
+        [key: string]: string;
+    };
+};
 export type AssetJobsDto = {
     /** Asset IDs */
     assetIds: string[];
@@ -3968,6 +3988,21 @@ export function copyAsset({ assetCopyDto }: {
         ...opts,
         method: "PUT",
         body: assetCopyDto
+    })));
+}
+/**
+ * Check existing assets by metadata
+ */
+export function checkExistingAssetsByMetadata({ checkExistingAssetsByMetadataDto }: {
+    checkExistingAssetsByMetadataDto: CheckExistingAssetsByMetadataDto;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: CheckExistingAssetsByMetadataResponseDto;
+    }>("/assets/exist/metadata", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: checkExistingAssetsByMetadataDto
     })));
 }
 /**

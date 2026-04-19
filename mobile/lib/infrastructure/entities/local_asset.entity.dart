@@ -6,11 +6,13 @@ import 'package:immich_mobile/infrastructure/utils/drift_default.mixin.dart';
 
 @TableIndex.sql('CREATE INDEX IF NOT EXISTS idx_local_asset_checksum ON local_asset_entity (checksum)')
 @TableIndex.sql('CREATE INDEX IF NOT EXISTS idx_local_asset_cloud_id ON local_asset_entity (i_cloud_id)')
+@TableIndex.sql('CREATE INDEX IF NOT EXISTS idx_local_asset_remote_id ON local_asset_entity (remote_id)')
 class LocalAssetEntity extends Table with DriftDefaultsMixin, AssetEntityMixin {
   const LocalAssetEntity();
 
   TextColumn get id => text()();
   TextColumn get checksum => text().nullable()();
+  TextColumn get remoteId => text().nullable()();
 
   // Only used during backup to mirror the favorite status of the asset in the server
   BoolColumn get isFavorite => boolean().withDefault(const Constant(false))();
@@ -43,7 +45,7 @@ extension LocalAssetEntityDataDomainExtension on LocalAssetEntityData {
     isFavorite: isFavorite,
     height: height,
     width: width,
-    remoteId: remoteId,
+    remoteId: remoteId ?? this.remoteId,
     orientation: orientation,
     playbackStyle: playbackStyle,
     adjustmentTime: adjustmentTime,

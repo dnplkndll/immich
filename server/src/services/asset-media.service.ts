@@ -9,12 +9,14 @@ import {
   AssetMediaStatus,
   AssetRejectReason,
   AssetUploadAction,
+  CheckExistingAssetsByMetadataResponseDto,
 } from 'src/dtos/asset-media-response.dto';
 import {
   AssetBulkUploadCheckDto,
   AssetMediaCreateDto,
   AssetMediaOptionsDto,
   AssetMediaSize,
+  CheckExistingAssetsByMetadataDto,
   UploadFieldName,
 } from 'src/dtos/asset-media.dto';
 import { AssetDownloadOriginalDto } from 'src/dtos/asset.dto';
@@ -247,6 +249,17 @@ export class AssetMediaService extends BaseService {
       contentType: mimeTypes.lookup(filepath),
       cacheControl: CacheControl.PrivateWithCache,
     });
+  }
+
+  async checkExistingAssetsByMetadata(
+    auth: AuthDto,
+    dto: CheckExistingAssetsByMetadataDto,
+  ): Promise<CheckExistingAssetsByMetadataResponseDto> {
+    const results = await this.assetRepository.getByMetadata(auth.user.id, dto.assets);
+    this.logger.log(`Metadata check: ${results.length}/${dto.assets.length} matched by EXIF date+dimensions`);
+    return {
+      existingIdMap: Object.fromEntries(results.map((r) => [r.localId, r.id])),
+    };
   }
 
   async bulkUploadCheck(auth: AuthDto, dto: AssetBulkUploadCheckDto): Promise<AssetBulkUploadCheckResponseDto> {

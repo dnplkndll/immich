@@ -190,8 +190,6 @@ class ApiClient {
           return ActivityStatisticsResponseDto.fromJson(value);
         case 'AddUsersDto':
           return AddUsersDto.fromJson(value);
-        case 'AdjustParameters':
-          return AdjustParameters.fromJson(value);
         case 'AdminOnboardingUpdateDto':
           return AdminOnboardingUpdateDto.fromJson(value);
         case 'AlbumResponseDto':
@@ -332,6 +330,12 @@ class ApiClient {
           return CastUpdate.fromJson(value);
         case 'ChangePasswordDto':
           return ChangePasswordDto.fromJson(value);
+        case 'CheckExistingAssetsByMetadataDto':
+          return CheckExistingAssetsByMetadataDto.fromJson(value);
+        case 'CheckExistingAssetsByMetadataItem':
+          return CheckExistingAssetsByMetadataItem.fromJson(value);
+        case 'CheckExistingAssetsByMetadataResponseDto':
+          return CheckExistingAssetsByMetadataResponseDto.fromJson(value);
         case 'Colorspace':
           return ColorspaceTypeTransformer().decode(value);
         case 'ContributorCountResponseDto':
@@ -382,8 +386,6 @@ class ApiClient {
           return FaceDto.fromJson(value);
         case 'FacialRecognitionConfig':
           return FacialRecognitionConfig.fromJson(value);
-        case 'FilterParameters':
-          return FilterParameters.fromJson(value);
         case 'FoldersResponse':
           return FoldersResponse.fromJson(value);
         case 'FoldersUpdate':

@@ -97,6 +97,7 @@ Class | Method | HTTP request | Description
 *AlbumsApi* | [**updateAlbumInfo**](doc//AlbumsApi.md#updatealbuminfo) | **PATCH** /albums/{id} | Update an album
 *AlbumsApi* | [**updateAlbumUser**](doc//AlbumsApi.md#updatealbumuser) | **PUT** /albums/{id}/user/{userId} | Update user role
 *AssetsApi* | [**checkBulkUpload**](doc//AssetsApi.md#checkbulkupload) | **POST** /assets/bulk-upload-check | Check bulk upload
+*AssetsApi* | [**checkExistingAssetsByMetadata**](doc//AssetsApi.md#checkexistingassetsbymetadata) | **POST** /assets/exist/metadata | Check existing assets by metadata
 *AssetsApi* | [**copyAsset**](doc//AssetsApi.md#copyasset) | **PUT** /assets/copy | Copy asset
 *AssetsApi* | [**deleteAssetMetadata**](doc//AssetsApi.md#deleteassetmetadata) | **DELETE** /assets/{id}/metadata/{key} | Delete asset metadata by key
 *AssetsApi* | [**deleteAssets**](doc//AssetsApi.md#deleteassets) | **DELETE** /assets | Delete assets
@@ -324,7 +325,6 @@ Class | Method | HTTP request | Description
  - [ActivityResponseDto](doc//ActivityResponseDto.md)
  - [ActivityStatisticsResponseDto](doc//ActivityStatisticsResponseDto.md)
  - [AddUsersDto](doc//AddUsersDto.md)
- - [AdjustParameters](doc//AdjustParameters.md)
  - [AdminOnboardingUpdateDto](doc//AdminOnboardingUpdateDto.md)
  - [AlbumResponseDto](doc//AlbumResponseDto.md)
  - [AlbumStatisticsResponseDto](doc//AlbumStatisticsResponseDto.md)
@@ -395,6 +395,9 @@ Class | Method | HTTP request | Description
  - [CastResponse](doc//CastResponse.md)
  - [CastUpdate](doc//CastUpdate.md)
  - [ChangePasswordDto](doc//ChangePasswordDto.md)
+ - [CheckExistingAssetsByMetadataDto](doc//CheckExistingAssetsByMetadataDto.md)
+ - [CheckExistingAssetsByMetadataItem](doc//CheckExistingAssetsByMetadataItem.md)
+ - [CheckExistingAssetsByMetadataResponseDto](doc//CheckExistingAssetsByMetadataResponseDto.md)
  - [Colorspace](doc//Colorspace.md)
  - [ContributorCountResponseDto](doc//ContributorCountResponseDto.md)
  - [CreateAlbumDto](doc//CreateAlbumDto.md)
@@ -420,7 +423,6 @@ Class | Method | HTTP request | Description
  - [ExifResponseDto](doc//ExifResponseDto.md)
  - [FaceDto](doc//FaceDto.md)
  - [FacialRecognitionConfig](doc//FacialRecognitionConfig.md)
- - [FilterParameters](doc//FilterParameters.md)
  - [FoldersResponse](doc//FoldersResponse.md)
  - [FoldersUpdate](doc//FoldersUpdate.md)
  - [ImageFormat](doc//ImageFormat.md)

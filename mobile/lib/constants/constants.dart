@@ -2,6 +2,9 @@ import 'dart:io';
 
 const String kMobileMetadataKey = "mobile-app";
 
+// Sentinel checksum for assets confirmed to exist on server (skips hashing)
+const String kServerConfirmedChecksum = '===SERVER_CONFIRMED===';
+
 // Number of log entries to retain on app start
 const int kLogTruncateLimit = 2000;
 
