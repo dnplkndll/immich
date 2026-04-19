@@ -69,6 +69,22 @@ const AssetBulkUploadCheckSchema = z
   })
   .meta({ id: 'AssetBulkUploadCheckDto' });
 
+const CheckExistingAssetsByMetadataItemSchema = z
+  .object({
+    localId: z.string().min(1).describe('Local asset ID (client-side identifier)'),
+    fileCreatedAt: isoDatetimeToDate.describe('File creation date (from EXIF or photo library)'),
+    width: z.int().positive().describe('Image/video width in pixels'),
+    height: z.int().positive().describe('Image/video height in pixels'),
+  })
+  .meta({ id: 'CheckExistingAssetsByMetadataItem' });
+
+const CheckExistingAssetsByMetadataSchema = z
+  .object({
+    assets: z.array(CheckExistingAssetsByMetadataItemSchema).describe('Assets to check by metadata'),
+  })
+  .meta({ id: 'CheckExistingAssetsByMetadataDto' });
+
 export class AssetMediaOptionsDto extends createZodDto(AssetMediaOptionsSchema) {}
 export class AssetMediaCreateDto extends createZodDto(AssetMediaCreateSchema) {}
 export class AssetBulkUploadCheckDto extends createZodDto(AssetBulkUploadCheckSchema) {}
+export class CheckExistingAssetsByMetadataDto extends createZodDto(CheckExistingAssetsByMetadataSchema) {}

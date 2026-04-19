@@ -330,6 +330,12 @@ class ApiClient {
           return CastUpdate.fromJson(value);
         case 'ChangePasswordDto':
           return ChangePasswordDto.fromJson(value);
+        case 'CheckExistingAssetsByMetadataDto':
+          return CheckExistingAssetsByMetadataDto.fromJson(value);
+        case 'CheckExistingAssetsByMetadataItem':
+          return CheckExistingAssetsByMetadataItem.fromJson(value);
+        case 'CheckExistingAssetsByMetadataResponseDto':
+          return CheckExistingAssetsByMetadataResponseDto.fromJson(value);
         case 'Colorspace':
           return ColorspaceTypeTransformer().decode(value);
         case 'ContributorCountResponseDto':
