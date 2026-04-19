@@ -30,6 +30,9 @@ export const ExifResponseSchema = z
     description: z.string().nullish().default(null).describe('Image description'),
     projectionType: z.string().nullish().default(null).describe('Projection type'),
     rating: z.number().nullish().default(null).describe('Rating'),
+    bitsPerSample: z.number().nullish().default(null).describe('Bits per sample (per channel)'),
+    profileDescription: z.string().nullish().default(null).describe('ICC profile description'),
+    colorspace: z.string().nullish().default(null).describe('Colorspace'),
   })
   .describe('EXIF response')
   .meta({ id: 'ExifResponseDto' });
@@ -60,5 +63,8 @@ export function mapExif(entity: MaybeDehydrated<Exif>): ExifResponseDto {
     description: entity.description,
     projectionType: entity.projectionType,
     rating: entity.rating,
+    bitsPerSample: entity.bitsPerSample,
+    profileDescription: entity.profileDescription,
+    colorspace: entity.colorspace,
   };
 }
