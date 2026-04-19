@@ -764,8 +764,12 @@ export type AssetMetadataBulkResponseDto = {
     };
 };
 export type ExifResponseDto = {
+    /** Bits per sample (per channel) */
+    bitsPerSample?: number | null;
     /** City name */
     city?: string | null;
+    /** Colorspace */
+    colorspace?: string | null;
     /** Country name */
     country?: string | null;
     /** Original date/time */
@@ -800,6 +804,8 @@ export type ExifResponseDto = {
     modifyDate?: string | null;
     /** Image orientation */
     orientation?: string | null;
+    /** ICC profile description */
+    profileDescription?: string | null;
     /** Projection type */
     projectionType?: string | null;
     /** Rating */

@@ -13,7 +13,7 @@ part of openapi.api;
 class SystemConfigJobDto {
   /// Returns a new [SystemConfigJobDto] instance.
   SystemConfigJobDto({
-    required this.audioAnalysis,
+    this.audioAnalysis,
     required this.backgroundTask,
     required this.editor,
     required this.faceDetection,
@@ -30,7 +30,13 @@ class SystemConfigJobDto {
     required this.workflow,
   });
 
-  JobSettingsDto audioAnalysis;
+  ///
+  /// Please note: This property should have been non-nullable! Since the specification file
+  /// does not include a default value (using the "default:" property), however, the generated
+  /// source code must fall back to having a nullable type.
+  /// Consider adding a "default:" property in the specification file to hide this note.
+  ///
+  JobSettingsDto? audioAnalysis;
 
   JobSettingsDto backgroundTask;
 
@@ -81,7 +87,7 @@ class SystemConfigJobDto {
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
-    (audioAnalysis.hashCode) +
+    (audioAnalysis == null ? 0 : audioAnalysis!.hashCode) +
     (backgroundTask.hashCode) +
     (editor.hashCode) +
     (faceDetection.hashCode) +
@@ -102,7 +108,11 @@ class SystemConfigJobDto {
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
+    if (this.audioAnalysis != null) {
       json[r'audioAnalysis'] = this.audioAnalysis;
+    } else {
+    //  json[r'audioAnalysis'] = null;
+    }
       json[r'backgroundTask'] = this.backgroundTask;
       json[r'editor'] = this.editor;
       json[r'faceDetection'] = this.faceDetection;
@@ -129,7 +139,7 @@ class SystemConfigJobDto {
       final json = value.cast<String, dynamic>();
 
       return SystemConfigJobDto(
-        audioAnalysis: JobSettingsDto.fromJson(json[r'audioAnalysis'])!,
+        audioAnalysis: JobSettingsDto.fromJson(json[r'audioAnalysis']),
         backgroundTask: JobSettingsDto.fromJson(json[r'backgroundTask'])!,
         editor: JobSettingsDto.fromJson(json[r'editor'])!,
         faceDetection: JobSettingsDto.fromJson(json[r'faceDetection'])!,
@@ -191,7 +201,6 @@ class SystemConfigJobDto {
 
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
-    'audioAnalysis',
     'backgroundTask',
     'editor',
     'faceDetection',

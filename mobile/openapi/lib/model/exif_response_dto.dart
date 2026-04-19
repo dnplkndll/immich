@@ -13,7 +13,9 @@ part of openapi.api;
 class ExifResponseDto {
   /// Returns a new [ExifResponseDto] instance.
   ExifResponseDto({
+    this.bitsPerSample,
     this.city,
+    this.colorspace,
     this.country,
     this.dateTimeOriginal,
     this.description,
@@ -31,14 +33,21 @@ class ExifResponseDto {
     this.model,
     this.modifyDate,
     this.orientation,
+    this.profileDescription,
     this.projectionType,
     this.rating,
     this.state,
     this.timeZone,
   });
 
+  /// Bits per sample (per channel)
+  num? bitsPerSample;
+
   /// City name
   String? city;
+
+  /// Colorspace
+  String? colorspace;
 
   /// Country name
   String? country;
@@ -98,6 +107,9 @@ class ExifResponseDto {
   /// Image orientation
   String? orientation;
 
+  /// ICC profile description
+  String? profileDescription;
+
   /// Projection type
   String? projectionType;
 
@@ -112,7 +124,9 @@ class ExifResponseDto {
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is ExifResponseDto &&
+    other.bitsPerSample == bitsPerSample &&
     other.city == city &&
+    other.colorspace == colorspace &&
     other.country == country &&
     other.dateTimeOriginal == dateTimeOriginal &&
     other.description == description &&
@@ -130,6 +144,7 @@ class ExifResponseDto {
     other.model == model &&
     other.modifyDate == modifyDate &&
     other.orientation == orientation &&
+    other.profileDescription == profileDescription &&
     other.projectionType == projectionType &&
     other.rating == rating &&
     other.state == state &&
@@ -138,7 +153,9 @@ class ExifResponseDto {
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
+    (bitsPerSample == null ? 0 : bitsPerSample!.hashCode) +
     (city == null ? 0 : city!.hashCode) +
+    (colorspace == null ? 0 : colorspace!.hashCode) +
     (country == null ? 0 : country!.hashCode) +
     (dateTimeOriginal == null ? 0 : dateTimeOriginal!.hashCode) +
     (description == null ? 0 : description!.hashCode) +
@@ -156,20 +173,31 @@ class ExifResponseDto {
     (model == null ? 0 : model!.hashCode) +
     (modifyDate == null ? 0 : modifyDate!.hashCode) +
     (orientation == null ? 0 : orientation!.hashCode) +
+    (profileDescription == null ? 0 : profileDescription!.hashCode) +
     (projectionType == null ? 0 : projectionType!.hashCode) +
     (rating == null ? 0 : rating!.hashCode) +
     (state == null ? 0 : state!.hashCode) +
     (timeZone == null ? 0 : timeZone!.hashCode);
 
   @override
-  String toString() => 'ExifResponseDto[city=$city, country=$country, dateTimeOriginal=$dateTimeOriginal, description=$description, exifImageHeight=$exifImageHeight, exifImageWidth=$exifImageWidth, exposureTime=$exposureTime, fNumber=$fNumber, fileSizeInByte=$fileSizeInByte, focalLength=$focalLength, iso=$iso, latitude=$latitude, lensModel=$lensModel, longitude=$longitude, make=$make, model=$model, modifyDate=$modifyDate, orientation=$orientation, projectionType=$projectionType, rating=$rating, state=$state, timeZone=$timeZone]';
+  String toString() => 'ExifResponseDto[bitsPerSample=$bitsPerSample, city=$city, colorspace=$colorspace, country=$country, dateTimeOriginal=$dateTimeOriginal, description=$description, exifImageHeight=$exifImageHeight, exifImageWidth=$exifImageWidth, exposureTime=$exposureTime, fNumber=$fNumber, fileSizeInByte=$fileSizeInByte, focalLength=$focalLength, iso=$iso, latitude=$latitude, lensModel=$lensModel, longitude=$longitude, make=$make, model=$model, modifyDate=$modifyDate, orientation=$orientation, profileDescription=$profileDescription, projectionType=$projectionType, rating=$rating, state=$state, timeZone=$timeZone]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
+    if (this.bitsPerSample != null) {
+      json[r'bitsPerSample'] = this.bitsPerSample;
+    } else {
+    //  json[r'bitsPerSample'] = null;
+    }
     if (this.city != null) {
       json[r'city'] = this.city;
     } else {
     //  json[r'city'] = null;
+    }
+    if (this.colorspace != null) {
+      json[r'colorspace'] = this.colorspace;
+    } else {
+    //  json[r'colorspace'] = null;
     }
     if (this.country != null) {
       json[r'country'] = this.country;
@@ -256,6 +284,11 @@ class ExifResponseDto {
     } else {
     //  json[r'orientation'] = null;
     }
+    if (this.profileDescription != null) {
+      json[r'profileDescription'] = this.profileDescription;
+    } else {
+    //  json[r'profileDescription'] = null;
+    }
     if (this.projectionType != null) {
       json[r'projectionType'] = this.projectionType;
     } else {
@@ -288,7 +321,11 @@ class ExifResponseDto {
       final json = value.cast<String, dynamic>();
 
       return ExifResponseDto(
+        bitsPerSample: json[r'bitsPerSample'] == null
+            ? null
+            : num.parse('${json[r'bitsPerSample']}'),
         city: mapValueOfType<String>(json, r'city'),
+        colorspace: mapValueOfType<String>(json, r'colorspace'),
         country: mapValueOfType<String>(json, r'country'),
         dateTimeOriginal: mapDateTime(json, r'dateTimeOriginal', r''),
         description: mapValueOfType<String>(json, r'description'),
@@ -320,6 +357,7 @@ class ExifResponseDto {
         model: mapValueOfType<String>(json, r'model'),
         modifyDate: mapDateTime(json, r'modifyDate', r''),
         orientation: mapValueOfType<String>(json, r'orientation'),
+        profileDescription: mapValueOfType<String>(json, r'profileDescription'),
         projectionType: mapValueOfType<String>(json, r'projectionType'),
         rating: json[r'rating'] == null
             ? null

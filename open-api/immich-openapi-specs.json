@@ -17792,9 +17792,21 @@
       "ExifResponseDto": {
         "description": "EXIF response",
         "properties": {
+          "bitsPerSample": {
+            "default": null,
+            "description": "Bits per sample (per channel)",
+            "nullable": true,
+            "type": "number"
+          },
           "city": {
             "default": null,
             "description": "City name",
+            "nullable": true,
+            "type": "string"
+          },
+          "colorspace": {
+            "default": null,
+            "description": "Colorspace",
             "nullable": true,
             "type": "string"
           },
@@ -17903,6 +17915,12 @@
           "orientation": {
             "default": null,
             "description": "Image orientation",
+            "nullable": true,
+            "type": "string"
+          },
+          "profileDescription": {
+            "default": null,
+            "description": "ICC profile description",
             "nullable": true,
             "type": "string"
           },

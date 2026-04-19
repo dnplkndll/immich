@@ -13,7 +13,7 @@ part of openapi.api;
 class SystemConfigDto {
   /// Returns a new [SystemConfigDto] instance.
   SystemConfigDto({
-    required this.audioFingerprinting,
+    this.audioFingerprinting,
     required this.backup,
     required this.ffmpeg,
     required this.image,
@@ -37,7 +37,13 @@ class SystemConfigDto {
     required this.user,
   });
 
-  SystemConfigAudioFingerprintingDto audioFingerprinting;
+  ///
+  /// Please note: This property should have been non-nullable! Since the specification file
+  /// does not include a default value (using the "default:" property), however, the generated
+  /// source code must fall back to having a nullable type.
+  /// Consider adding a "default:" property in the specification file to hide this note.
+  ///
+  SystemConfigAudioFingerprintingDto? audioFingerprinting;
 
   SystemConfigBackupsDto backup;
 
@@ -109,7 +115,7 @@ class SystemConfigDto {
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
-    (audioFingerprinting.hashCode) +
+    (audioFingerprinting == null ? 0 : audioFingerprinting!.hashCode) +
     (backup.hashCode) +
     (ffmpeg.hashCode) +
     (image.hashCode) +
@@ -137,7 +143,11 @@ class SystemConfigDto {
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
+    if (this.audioFingerprinting != null) {
       json[r'audioFingerprinting'] = this.audioFingerprinting;
+    } else {
+    //  json[r'audioFingerprinting'] = null;
+    }
       json[r'backup'] = this.backup;
       json[r'ffmpeg'] = this.ffmpeg;
       json[r'image'] = this.image;
@@ -171,7 +181,7 @@ class SystemConfigDto {
       final json = value.cast<String, dynamic>();
 
       return SystemConfigDto(
-        audioFingerprinting: SystemConfigAudioFingerprintingDto.fromJson(json[r'audioFingerprinting'])!,
+        audioFingerprinting: SystemConfigAudioFingerprintingDto.fromJson(json[r'audioFingerprinting']),
         backup: SystemConfigBackupsDto.fromJson(json[r'backup'])!,
         ffmpeg: SystemConfigFFmpegDto.fromJson(json[r'ffmpeg'])!,
         image: SystemConfigImageDto.fromJson(json[r'image'])!,
@@ -240,7 +250,6 @@ class SystemConfigDto {
 
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
-    'audioFingerprinting',
     'backup',
     'ffmpeg',
     'image',
