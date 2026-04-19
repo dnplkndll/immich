@@ -37,6 +37,7 @@ const QueuesResponseLegacySchema = z
     [QueueName.Ocr]: QueueResponseLegacySchema,
     [QueueName.Workflow]: QueueResponseLegacySchema,
     [QueueName.Editor]: QueueResponseLegacySchema,
+    [QueueName.AudioAnalysis]: QueueResponseLegacySchema,
   })
   .meta({ id: 'QueuesResponseLegacyDto' });
 

@@ -448,6 +448,38 @@ export class AssetJobRepository {
       .stream();
   }
 
+  @GenerateSql({ params: [], stream: true })
+  streamForAudioFingerprint(force?: boolean) {
+    return this.db
+      .selectFrom('asset')
+      .select(['asset.id'])
+      .where('asset.type', '=', sql.lit(AssetType.Video))
+      .where('asset.deletedAt', 'is', null)
+      .where('asset.visibility', '!=', sql.lit(AssetVisibility.Hidden))
+      .$if(!force, (qb) =>
+        qb
+          .innerJoin('asset_job_status', 'asset_job_status.assetId', 'asset.id')
+          .where('asset_job_status.audioFingerprintedAt', 'is', null),
+      )
+      .stream();
+  }
+
+  @GenerateSql({ params: [DummyValue.UUID] })
+  getForAudioFingerprintJob(id: string) {
+    return this.db
+      .selectFrom('asset')
+      .select([
+        'asset.id',
+        'asset.type',
+        'asset.ownerId',
+        'asset.originalPath',
+        'asset.duplicateId',
+        'asset.visibility',
+      ])
+      .where('asset.id', '=', asUuid(id))
+      .executeTakeFirst();
+  }
+
   @GenerateSql({ params: [DummyValue.DATE], stream: true })
   streamForMigrationJob() {
     return this.db.selectFrom('asset').select(['id']).where('asset.deletedAt', 'is', null).stream();

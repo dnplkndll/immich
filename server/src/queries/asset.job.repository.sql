@@ -712,6 +712,31 @@ where
   and "asset"."deletedAt" is null
   and "asset"."visibility" != $1
 
+-- AssetJobRepository.streamForAudioFingerprint
+select
+  "asset"."id"
+from
+  "asset"
+  inner join "asset_job_status" on "asset_job_status"."assetId" = "asset"."id"
+where
+  "asset"."type" = 'VIDEO'
+  and "asset"."deletedAt" is null
+  and "asset"."visibility" != 'hidden'
+  and "asset_job_status"."audioFingerprintedAt" is null
+
+-- AssetJobRepository.getForAudioFingerprintJob
+select
+  "asset"."id",
+  "asset"."type",
+  "asset"."ownerId",
+  "asset"."originalPath",
+  "asset"."duplicateId",
+  "asset"."visibility"
+from
+  "asset"
+where
+  "asset"."id" = $1::uuid
+
 -- AssetJobRepository.streamForMigrationJob
 select
   "id"

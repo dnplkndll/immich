@@ -40,6 +40,7 @@ import { AssetMetadataAuditTable } from 'src/schema/tables/asset-metadata-audit.
 import { AssetMetadataTable } from 'src/schema/tables/asset-metadata.table';
 import { AssetOcrTable } from 'src/schema/tables/asset-ocr.table';
 import { AssetTable } from 'src/schema/tables/asset.table';
+import { AudioFingerprintTable } from 'src/schema/tables/audio-fingerprint.table';
 import { FaceSearchTable } from 'src/schema/tables/face-search.table';
 import { GeodataPlacesTable } from 'src/schema/tables/geodata-places.table';
 import { LibraryTable } from 'src/schema/tables/library.table';
@@ -97,6 +98,7 @@ export class ImmichDatabase {
     AssetOcrTable,
     AssetTable,
     AssetFileTable,
+    AudioFingerprintTable,
     AssetExifTable,
     FaceSearchTable,
     GeodataPlacesTable,
@@ -193,6 +195,7 @@ export interface DB {
   asset_metadata_audit: AssetMetadataAuditTable;
   asset_job_status: AssetJobStatusTable;
   asset_ocr: AssetOcrTable;
+  audio_fingerprint: AudioFingerprintTable;
   ocr_search: OcrSearchTable;
 
   face_search: FaceSearchTable;

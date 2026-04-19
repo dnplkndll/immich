@@ -14,6 +14,7 @@ import { AppRepository } from 'src/repositories/app.repository';
 import { AssetEditRepository } from 'src/repositories/asset-edit.repository';
 import { AssetJobRepository } from 'src/repositories/asset-job.repository';
 import { AssetRepository } from 'src/repositories/asset.repository';
+import { AudioFingerprintRepository } from 'src/repositories/audio-fingerprint.repository';
 import { ConfigRepository } from 'src/repositories/config.repository';
 import { CronRepository } from 'src/repositories/cron.repository';
 import { CryptoRepository } from 'src/repositories/crypto.repository';
@@ -66,6 +67,7 @@ export const BASE_SERVICE_DEPENDENCIES = [
   ActivityRepository,
   AlbumRepository,
   AlbumUserRepository,
+  AudioFingerprintRepository,
   ApiKeyRepository,
   AppRepository,
   AssetRepository,
@@ -124,6 +126,7 @@ export class BaseService {
     protected activityRepository: ActivityRepository,
     protected albumRepository: AlbumRepository,
     protected albumUserRepository: AlbumUserRepository,
+    protected audioFingerprintRepository: AudioFingerprintRepository,
     protected apiKeyRepository: ApiKeyRepository,
     protected appRepository: AppRepository,
     protected assetRepository: AssetRepository,

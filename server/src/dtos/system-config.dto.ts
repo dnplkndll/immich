@@ -47,6 +47,13 @@ const cronExpressionSchema = z
   .regex(/(((\d+,)+\d+|(\d+(\/|-)\d+)|\d+|\*) ?){5,7}/, 'Invalid cron expression')
   .describe('Cron expression');
 
+const SystemConfigAudioFingerprintingSchema = z
+  .object({
+    enabled: configBool.describe('Enabled'),
+    maxDistance: z.number().min(0).max(1).describe('Max BER distance'),
+  })
+  .meta({ id: 'SystemConfigAudioFingerprintingDto' });
+
 const DatabaseBackupSchema = z
   .object({
     enabled: configBool.describe('Enabled'),
@@ -102,6 +109,7 @@ const SystemConfigJobSchema = z
     ocr: JobSettingsSchema,
     workflow: JobSettingsSchema,
     editor: JobSettingsSchema,
+    audioAnalysis: JobSettingsSchema.optional().default({ concurrency: 2 }),
   })
   .meta({ id: 'SystemConfigJobDto' });
 
@@ -353,6 +361,10 @@ const SystemConfigUserSchema = z
 
 export const SystemConfigSchema = z
   .object({
+    audioFingerprinting: SystemConfigAudioFingerprintingSchema.optional().default({
+      enabled: false,
+      maxDistance: 0.35,
+    }),
     backup: SystemConfigBackupsSchema,
     ffmpeg: SystemConfigFFmpegSchema,
     logging: SystemConfigLoggingSchema,

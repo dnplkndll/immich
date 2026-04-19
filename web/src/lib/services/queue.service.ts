@@ -28,6 +28,7 @@ import {
   mdiFolderMove,
   mdiImageSearch,
   mdiLibraryShelves,
+  mdiMusicNote,
   mdiOcr,
   mdiPause,
   mdiPencil,
@@ -244,6 +245,10 @@ export const asQueueItem = ($t: MessageFormatter, queue: { name: QueueName }): Q
     [QueueName.Editor]: {
       icon: mdiPencil,
       title: $t('editor'),
+    },
+    [QueueName.AudioAnalysis]: {
+      icon: mdiMusicNote,
+      title: 'Audio Fingerprinting',
     },
   };
 

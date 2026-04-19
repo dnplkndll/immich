@@ -16,6 +16,10 @@ import {
 import { ConcurrentQueueName, FullsizeImageOptions, ImageOptions } from 'src/types';
 
 export type SystemConfig = {
+  audioFingerprinting: {
+    enabled: boolean;
+    maxDistance: number;
+  };
   backup: {
     database: {
       enabled: boolean;
@@ -195,6 +199,10 @@ export type SystemConfig = {
 export type MachineLearningConfig = SystemConfig['machineLearning'];
 
 export const defaults = Object.freeze<SystemConfig>({
+  audioFingerprinting: {
+    enabled: false,
+    maxDistance: 0.35,
+  },
   backup: {
     database: {
       enabled: true,
@@ -240,6 +248,7 @@ export const defaults = Object.freeze<SystemConfig>({
     [QueueName.Ocr]: { concurrency: 1 },
     [QueueName.Workflow]: { concurrency: 5 },
     [QueueName.Editor]: { concurrency: 2 },
+    [QueueName.AudioAnalysis]: { concurrency: 2 },
   },
   logging: {
     enabled: true,

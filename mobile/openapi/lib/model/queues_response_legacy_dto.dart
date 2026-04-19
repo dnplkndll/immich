@@ -13,6 +13,7 @@ part of openapi.api;
 class QueuesResponseLegacyDto {
   /// Returns a new [QueuesResponseLegacyDto] instance.
   QueuesResponseLegacyDto({
+    required this.audioAnalysis,
     required this.backgroundTask,
     required this.backupDatabase,
     required this.duplicateDetection,
@@ -32,6 +33,8 @@ class QueuesResponseLegacyDto {
     required this.videoConversion,
     required this.workflow,
   });
+
+  QueueResponseLegacyDto audioAnalysis;
 
   QueueResponseLegacyDto backgroundTask;
 
@@ -71,6 +74,7 @@ class QueuesResponseLegacyDto {
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is QueuesResponseLegacyDto &&
+    other.audioAnalysis == audioAnalysis &&
     other.backgroundTask == backgroundTask &&
     other.backupDatabase == backupDatabase &&
     other.duplicateDetection == duplicateDetection &&
@@ -93,6 +97,7 @@ class QueuesResponseLegacyDto {
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
+    (audioAnalysis.hashCode) +
     (backgroundTask.hashCode) +
     (backupDatabase.hashCode) +
     (duplicateDetection.hashCode) +
@@ -113,10 +118,11 @@ class QueuesResponseLegacyDto {
     (workflow.hashCode);
 
   @override
-  String toString() => 'QueuesResponseLegacyDto[backgroundTask=$backgroundTask, backupDatabase=$backupDatabase, duplicateDetection=$duplicateDetection, editor=$editor, faceDetection=$faceDetection, facialRecognition=$facialRecognition, library_=$library_, metadataExtraction=$metadataExtraction, migration=$migration, notifications=$notifications, ocr=$ocr, search=$search, sidecar=$sidecar, smartSearch=$smartSearch, storageTemplateMigration=$storageTemplateMigration, thumbnailGeneration=$thumbnailGeneration, videoConversion=$videoConversion, workflow=$workflow]';
+  String toString() => 'QueuesResponseLegacyDto[audioAnalysis=$audioAnalysis, backgroundTask=$backgroundTask, backupDatabase=$backupDatabase, duplicateDetection=$duplicateDetection, editor=$editor, faceDetection=$faceDetection, facialRecognition=$facialRecognition, library_=$library_, metadataExtraction=$metadataExtraction, migration=$migration, notifications=$notifications, ocr=$ocr, search=$search, sidecar=$sidecar, smartSearch=$smartSearch, storageTemplateMigration=$storageTemplateMigration, thumbnailGeneration=$thumbnailGeneration, videoConversion=$videoConversion, workflow=$workflow]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
+      json[r'audioAnalysis'] = this.audioAnalysis;
       json[r'backgroundTask'] = this.backgroundTask;
       json[r'backupDatabase'] = this.backupDatabase;
       json[r'duplicateDetection'] = this.duplicateDetection;
@@ -147,6 +153,7 @@ class QueuesResponseLegacyDto {
       final json = value.cast<String, dynamic>();
 
       return QueuesResponseLegacyDto(
+        audioAnalysis: QueueResponseLegacyDto.fromJson(json[r'audioAnalysis'])!,
         backgroundTask: QueueResponseLegacyDto.fromJson(json[r'backgroundTask'])!,
         backupDatabase: QueueResponseLegacyDto.fromJson(json[r'backupDatabase'])!,
         duplicateDetection: QueueResponseLegacyDto.fromJson(json[r'duplicateDetection'])!,
@@ -212,6 +219,7 @@ class QueuesResponseLegacyDto {
 
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
+    'audioAnalysis',
     'backgroundTask',
     'backupDatabase',
     'duplicateDetection',
