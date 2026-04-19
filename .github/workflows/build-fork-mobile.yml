@@ -1,0 +1,90 @@
+name: Build Fork Mobile (TestFlight)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - merged/deploy
+
+jobs:
+  build-ios:
+    name: Build and upload iOS to TestFlight
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: ./mobile/pubspec.yaml
+          channel: stable
+          cache: true
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Generate i18n/localization files
+        run: |
+          dart run easy_localization:generate -S ../i18n
+          dart run bin/generate_keys.dart
+          flutter pub run build_runner build --delete-conflicting-outputs
+
+      - name: Import distribution certificate
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.IOS_DISTRIBUTION_CERT_P12 }}
+          p12-password: ${{ secrets.IOS_DISTRIBUTION_CERT_PASSWORD }}
+          keychain-password: ${{ secrets.KEYCHAIN_PASSWORD }}
+
+      - name: Install provisioning profiles
+        run: |
+          PP_DIR=~/Library/MobileDevice/Provisioning\ Profiles
+          mkdir -p "$PP_DIR"
+          echo "$IOS_PROVISION_PROFILE_MAIN"  | base64 --decode > "$PP_DIR/com.donkendall.immich.mobileprovision"
+          echo "$IOS_PROVISION_PROFILE_SHARE" | base64 --decode > "$PP_DIR/com.donkendall.immich.ShareExtension.mobileprovision"
+          echo "$IOS_PROVISION_PROFILE_WIDGET"| base64 --decode > "$PP_DIR/com.donkendall.immich.Widget.mobileprovision"
+        env:
+          IOS_PROVISION_PROFILE_MAIN:   ${{ secrets.IOS_PROVISION_PROFILE_MAIN }}
+          IOS_PROVISION_PROFILE_SHARE:  ${{ secrets.IOS_PROVISION_PROFILE_SHARE }}
+          IOS_PROVISION_PROFILE_WIDGET: ${{ secrets.IOS_PROVISION_PROFILE_WIDGET }}
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: mobile/ios
+
+      - name: Install CocoaPods dependencies
+        working-directory: mobile/ios
+        run: pod install
+
+      - name: Flutter build iOS (pre-compile Dart, surfaces Dart errors explicitly)
+        run: flutter build ios --release --no-codesign
+
+      - name: Build and upload to TestFlight
+        working-directory: mobile/ios
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$APP_STORE_CONNECT_API_KEY_P8" > ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8
+          bundle exec fastlane fork_testflight
+
+      - name: Upload gym build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gym-build-log
+          path: ~/Library/Logs/gym/
+          if-no-files-found: ignore

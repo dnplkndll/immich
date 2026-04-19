@@ -9,52 +9,8 @@ concurrency:
   cancel-in-progress: true
 permissions: {}
 jobs:
-  pre-job:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    outputs:
-      should_run: ${{ steps.check.outputs.should_run }}
-    steps:
-      - id: token
-        uses: immich-app/devtools/actions/create-workflow-token@57ff6ebfd507b045514442683ff06ff1b2f6efbd # create-workflow-token-action-v1.0.2
-        with:
-          app-id: ${{ secrets.PUSH_O_MATIC_APP_ID }}
-          private-key: ${{ secrets.PUSH_O_MATIC_APP_KEY }}
-
-      - name: Check what should run
-        id: check
-        uses: immich-app/devtools/actions/pre-job@f50e3b600b6ac1763ddb8f3dfc69093512b967a1 # pre-job-action-v2.0.3
-        with:
-          github-token: ${{ steps.token.outputs.token }}
-          filters: |
-            i18n:
-              - 'i18n/**'
-            web:
-              - 'web/**'
-              - 'i18n/**'
-              - 'open-api/typescript-sdk/**'
-            server:
-              - 'server/**'
-            cli:
-              - 'cli/**'
-              - 'open-api/typescript-sdk/**'
-            e2e:
-              - 'e2e/**'
-            mobile:
-              - 'mobile/**'
-            machine-learning:
-              - 'machine-learning/**'
-            .github:
-              - '.github/**'
-          force-filters: |
-            - '.github/workflows/test.yml'
-          force-events: 'workflow_dispatch'
-
   server-unit-tests:
     name: Test & Lint Server
-    needs: pre-job
-    if: ${{ fromJSON(needs.pre-job.outputs.should_run).server == true }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -62,17 +18,10 @@ jobs:
       run:
         working-directory: ./server
     steps:
-      - id: token
-        uses: immich-app/devtools/actions/create-workflow-token@57ff6ebfd507b045514442683ff06ff1b2f6efbd # create-workflow-token-action-v1.0.2
-        with:
-          app-id: ${{ secrets.PUSH_O_MATIC_APP_ID }}
-          private-key: ${{ secrets.PUSH_O_MATIC_APP_KEY }}
-
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-          token: ${{ steps.token.outputs.token }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
@@ -98,8 +47,6 @@ jobs:
         if: ${{ !cancelled() }}
   cli-unit-tests:
     name: Unit Test CLI
-    needs: pre-job
-    if: ${{ fromJSON(needs.pre-job.outputs.should_run).cli == true }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -107,17 +54,10 @@ jobs:
       run:
         working-directory: ./cli
     steps:
-      - id: token
-        uses: immich-app/devtools/actions/create-workflow-token@57ff6ebfd507b045514442683ff06ff1b2f6efbd # create-workflow-token-action-v1.0.2
-        with:
-          app-id: ${{ secrets.PUSH_O_MATIC_APP_ID }}
-          private-key: ${{ secrets.PUSH_O_MATIC_APP_KEY }}
-
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-          token: ${{ steps.token.outputs.token }}
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
       - name: Setup Node
@@ -145,8 +85,6 @@ jobs:
         if: ${{ !cancelled() }}
   cli-unit-tests-win:
     name: Unit Test CLI (Windows)
-    needs: pre-job
-    if: ${{ fromJSON(needs.pre-job.outputs.should_run).cli == true }}
     runs-on: windows-latest
     permissions:
       contents: read
@@ -154,17 +92,10 @@ jobs:
       run:
         working-directory: ./cli
     steps:
-      - id: token
-        uses: immich-app/devtools/actions/create-workflow-token@57ff6ebfd507b045514442683ff06ff1b2f6efbd # create-workflow-token-action-v1.0.2
-        with:
-          app-id: ${{ secrets.PUSH_O_MATIC_APP_ID }}
-          private-key: ${{ secrets.PUSH_O_MATIC_APP_KEY }}
-
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-          token: ${{ steps.token.outputs.token }}
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
       - name: Setup Node
@@ -187,8 +118,6 @@ jobs:
         if: ${{ !cancelled() }}
   web-lint:
     name: Lint Web
-    needs: pre-job
-    if: ${{ fromJSON(needs.pre-job.outputs.should_run).web == true }}
     runs-on: mich
     permissions:
       contents: read
@@ -196,17 +125,10 @@ jobs:
       run:
         working-directory: ./web
     steps:
-      - id: token
-        uses: immich-app/devtools/actions/create-workflow-token@57ff6ebfd507b045514442683ff06ff1b2f6efbd # create-workflow-token-action-v1.0.2
-        with:
-          app-id: ${{ secrets.PUSH_O_MATIC_APP_ID }}
-          private-key: ${{ secrets.PUSH_O_MATIC_APP_KEY }}
-
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-          token: ${{ steps.token.outputs.token }}
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
       - name: Setup Node
@@ -231,8 +153,6 @@ jobs:
         if: ${{ !cancelled() }}
   web-unit-tests:
     name: Test Web
-    needs: pre-job
-    if: ${{ fromJSON(needs.pre-job.outputs.should_run).web == true }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -240,17 +160,10 @@ jobs:
       run:
         working-directory: ./web
     steps:
-      - id: token
-        uses: immich-app/devtools/actions/create-workflow-token@57ff6ebfd507b045514442683ff06ff1b2f6efbd # create-workflow-token-action-v1.0.2
-        with:
-          app-id: ${{ secrets.PUSH_O_MATIC_APP_ID }}
-          private-key: ${{ secrets.PUSH_O_MATIC_APP_KEY }}
-
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-          token: ${{ steps.token.outputs.token }}
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
       - name: Setup Node
@@ -272,23 +185,14 @@ jobs:
         if: ${{ !cancelled() }}
   i18n-tests:
     name: Test i18n
-    needs: pre-job
-    if: ${{ fromJSON(needs.pre-job.outputs.should_run).i18n == true }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
-      - id: token
-        uses: immich-app/devtools/actions/create-workflow-token@57ff6ebfd507b045514442683ff06ff1b2f6efbd # create-workflow-token-action-v1.0.2
-        with:
-          app-id: ${{ secrets.PUSH_O_MATIC_APP_ID }}
-          private-key: ${{ secrets.PUSH_O_MATIC_APP_KEY }}
-
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-          token: ${{ steps.token.outputs.token }}
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
       - name: Setup Node
@@ -317,8 +221,6 @@ jobs:
           exit 1
   e2e-tests-lint:
     name: End-to-End Lint
-    needs: pre-job
-    if: ${{ fromJSON(needs.pre-job.outputs.should_run).e2e == true }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -326,17 +228,10 @@ jobs:
       run:
         working-directory: ./e2e
     steps:
-      - id: token
-        uses: immich-app/devtools/actions/create-workflow-token@57ff6ebfd507b045514442683ff06ff1b2f6efbd # create-workflow-token-action-v1.0.2
-        with:
-          app-id: ${{ secrets.PUSH_O_MATIC_APP_ID }}
-          private-key: ${{ secrets.PUSH_O_MATIC_APP_KEY }}
-
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-          token: ${{ steps.token.outputs.token }}
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
       - name: Setup Node
@@ -363,8 +258,6 @@ jobs:
         if: ${{ !cancelled() }}
   server-medium-tests:
     name: Medium Tests (Server)
-    needs: pre-job
-    if: ${{ fromJSON(needs.pre-job.outputs.should_run).server == true }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -372,18 +265,11 @@ jobs:
       run:
         working-directory: ./server
     steps:
-      - id: token
-        uses: immich-app/devtools/actions/create-workflow-token@57ff6ebfd507b045514442683ff06ff1b2f6efbd # create-workflow-token-action-v1.0.2
-        with:
-          app-id: ${{ secrets.PUSH_O_MATIC_APP_ID }}
-          private-key: ${{ secrets.PUSH_O_MATIC_APP_KEY }}
-
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
           submodules: 'recursive'
-          token: ${{ steps.token.outputs.token }}
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
       - name: Setup Node
@@ -399,8 +285,6 @@ jobs:
         if: ${{ !cancelled() }}
   e2e-tests-server-cli:
     name: End-to-End Tests (Server & CLI)
-    needs: pre-job
-    if: ${{ fromJSON(needs.pre-job.outputs.should_run).e2e == true || fromJSON(needs.pre-job.outputs.should_run).server == true || fromJSON(needs.pre-job.outputs.should_run).cli == true }}
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
@@ -411,18 +295,11 @@ jobs:
       matrix:
         runner: [ubuntu-latest, ubuntu-24.04-arm]
     steps:
-      - id: token
-        uses: immich-app/devtools/actions/create-workflow-token@57ff6ebfd507b045514442683ff06ff1b2f6efbd # create-workflow-token-action-v1.0.2
-        with:
-          app-id: ${{ secrets.PUSH_O_MATIC_APP_ID }}
-          private-key: ${{ secrets.PUSH_O_MATIC_APP_KEY }}
-
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
           submodules: 'recursive'
-          token: ${{ steps.token.outputs.token }}
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
       - name: Setup Node
@@ -471,8 +348,6 @@ jobs:
           path: e2e/docker-compose-logs.txt
   e2e-tests-web:
     name: End-to-End Tests (Web)
-    needs: pre-job
-    if: ${{ fromJSON(needs.pre-job.outputs.should_run).e2e == true || fromJSON(needs.pre-job.outputs.should_run).web == true }}
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
@@ -483,18 +358,11 @@ jobs:
       matrix:
         runner: [ubuntu-latest, ubuntu-24.04-arm]
     steps:
-      - id: token
-        uses: immich-app/devtools/actions/create-workflow-token@57ff6ebfd507b045514442683ff06ff1b2f6efbd # create-workflow-token-action-v1.0.2
-        with:
-          app-id: ${{ secrets.PUSH_O_MATIC_APP_ID }}
-          private-key: ${{ secrets.PUSH_O_MATIC_APP_KEY }}
-
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
           submodules: 'recursive'
-          token: ${{ steps.token.outputs.token }}
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
       - name: Setup Node
@@ -571,22 +439,13 @@ jobs:
           needs: ${{ toJSON(needs) }}
   mobile-unit-tests:
     name: Unit Test Mobile
-    needs: pre-job
-    if: ${{ fromJSON(needs.pre-job.outputs.should_run).mobile == true }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
-      - id: token
-        uses: immich-app/devtools/actions/create-workflow-token@57ff6ebfd507b045514442683ff06ff1b2f6efbd # create-workflow-token-action-v1.0.2
-        with:
-          app-id: ${{ secrets.PUSH_O_MATIC_APP_ID }}
-          private-key: ${{ secrets.PUSH_O_MATIC_APP_KEY }}
-
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-          token: ${{ steps.token.outputs.token }}
       - name: Setup Flutter SDK
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
@@ -600,8 +459,6 @@ jobs:
         run: flutter test -j 1
   ml-unit-tests:
     name: Unit Test ML
-    needs: pre-job
-    if: ${{ fromJSON(needs.pre-job.outputs.should_run).machine-learning == true }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -609,16 +466,9 @@ jobs:
       run:
         working-directory: ./machine-learning
     steps:
-      - id: token
-        uses: immich-app/devtools/actions/create-workflow-token@57ff6ebfd507b045514442683ff06ff1b2f6efbd # create-workflow-token-action-v1.0.2
-        with:
-          app-id: ${{ secrets.PUSH_O_MATIC_APP_ID }}
-          private-key: ${{ secrets.PUSH_O_MATIC_APP_KEY }}
-
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-          token: ${{ steps.token.outputs.token }}
       - name: Install uv
         uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
         with:
@@ -640,8 +490,6 @@ jobs:
           uv run pytest --cov=immich_ml --cov-report term-missing
   github-files-formatting:
     name: .github Files Formatting
-    needs: pre-job
-    if: ${{ fromJSON(needs.pre-job.outputs.should_run)['.github'] == true }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -649,17 +497,10 @@ jobs:
       run:
         working-directory: ./.github
     steps:
-      - id: token
-        uses: immich-app/devtools/actions/create-workflow-token@57ff6ebfd507b045514442683ff06ff1b2f6efbd # create-workflow-token-action-v1.0.2
-        with:
-          app-id: ${{ secrets.PUSH_O_MATIC_APP_ID }}
-          private-key: ${{ secrets.PUSH_O_MATIC_APP_KEY }}
-
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-          token: ${{ steps.token.outputs.token }}
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
       - name: Setup Node
@@ -679,16 +520,9 @@ jobs:
     permissions:
       contents: read
     steps:
-      - id: token
-        uses: immich-app/devtools/actions/create-workflow-token@57ff6ebfd507b045514442683ff06ff1b2f6efbd # create-workflow-token-action-v1.0.2
-        with:
-          app-id: ${{ secrets.PUSH_O_MATIC_APP_ID }}
-          private-key: ${{ secrets.PUSH_O_MATIC_APP_KEY }}
-
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-          token: ${{ steps.token.outputs.token }}
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0
         with:
@@ -700,17 +534,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - id: token
-        uses: immich-app/devtools/actions/create-workflow-token@57ff6ebfd507b045514442683ff06ff1b2f6efbd # create-workflow-token-action-v1.0.2
-        with:
-          app-id: ${{ secrets.PUSH_O_MATIC_APP_ID }}
-          private-key: ${{ secrets.PUSH_O_MATIC_APP_KEY }}
-
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-          token: ${{ steps.token.outputs.token }}
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
       - name: Setup Node
@@ -762,17 +589,10 @@ jobs:
       run:
         working-directory: ./server
     steps:
-      - id: token
-        uses: immich-app/devtools/actions/create-workflow-token@57ff6ebfd507b045514442683ff06ff1b2f6efbd # create-workflow-token-action-v1.0.2
-        with:
-          app-id: ${{ secrets.PUSH_O_MATIC_APP_ID }}
-          private-key: ${{ secrets.PUSH_O_MATIC_APP_KEY }}
-
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-          token: ${{ steps.token.outputs.token }}
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
       - name: Setup Node
