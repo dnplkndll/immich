@@ -1,0 +1,58 @@
+name: ledoent build (merged-deploy image)
+
+# Builds linux/amd64 immich-server image from the merged/deploy branch
+# and pushes to registry.hz.ledoweb.com.
+# Replaces the previous manual docker build + push to GHCR process.
+# Triggered by gitaggregate pushing the merged feature branch.
+
+on:
+  push:
+    branches: [merged/deploy]
+  workflow_dispatch:
+
+concurrency:
+  group: ledoent-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ZOT_IMAGE: registry.hz.ledoweb.com/dnplkndll/immich-server
+
+jobs:
+  build:
+    name: Build and push server image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Zot registry
+        uses: docker/login-action@v3
+        with:
+          registry: registry.hz.ledoweb.com
+          username: robot-ci
+          password: ${{ secrets.ZOT_CI_PASSWORD }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: server/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.ZOT_IMAGE }}:merged-deploy
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Summary
+        run: |
+          {
+            echo "### Image pushed"
+            echo ''
+            echo '```'
+            echo "${{ env.ZOT_IMAGE }}:merged-deploy"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
