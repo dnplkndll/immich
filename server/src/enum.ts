@@ -767,6 +767,7 @@ export enum QueueName {
   Ocr = 'ocr',
   Workflow = 'workflow',
   Editor = 'editor',
+  AudioAnalysis = 'audioAnalysis',
 }
 
 export const QueueNameSchema = z.enum(QueueName).describe('Queue name').meta({ id: 'QueueName' });
@@ -859,6 +860,10 @@ export enum JobName {
 
   // Workflow
   WorkflowRun = 'WorkflowRun',
+
+  // Audio Fingerprinting
+  AudioFingerprintQueueAll = 'AudioFingerprintQueueAll',
+  AudioFingerprint = 'AudioFingerprint',
 }
 
 export const JobNameSchema = z.enum(JobName).describe('Job name').meta({ id: 'JobName' });

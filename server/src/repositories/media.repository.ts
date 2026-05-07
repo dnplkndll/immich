@@ -504,4 +504,26 @@ export class MediaRepository {
     }
     return outputFrames;
   }
+
+  async fingerprintAudio(input: string): Promise<{ fingerprint: number[]; duration: number } | null> {
+    return new Promise((resolve) => {
+      execFileCb('fpcalc', ['-raw', '-json', '-length', '120', input], (error, stdout) => {
+        if (error) {
+          this.logger.debug(`Could not fingerprint audio: ${error.message}`);
+          resolve(null);
+          return;
+        }
+        try {
+          const data = JSON.parse(stdout);
+          if (!Array.isArray(data.fingerprint) || data.fingerprint.length === 0) {
+            resolve(null);
+            return;
+          }
+          resolve({ fingerprint: data.fingerprint, duration: Number(data.duration) });
+        } catch {
+          resolve(null);
+        }
+      });
+    });
+  }
 }

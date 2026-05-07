@@ -18,10 +18,13 @@
     mdiCheckOutline,
     mdiChevronLeft,
     mdiChevronRight,
+    mdiImageOutline,
     mdiKeyboard,
     mdiPageFirst,
     mdiPageLast,
+    mdiSelectAll,
     mdiTrashCanOutline,
+    mdiVideoOutline,
   } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import type { PageData } from './$types';
@@ -54,9 +57,14 @@
   };
 
   let duplicates = $state(data.duplicates);
+  let typeFilter = $state<'all' | 'IMAGE' | 'VIDEO'>('all');
+
+  let filteredDuplicates = $derived(
+    typeFilter === 'all' ? duplicates : duplicates.filter((g) => g.assets[0]?.type === typeFilter),
+  );
 
   const correctDuplicatesIndex = (index: number) => {
-    return Math.max(0, Math.min(index, duplicates.length - 1));
+    return Math.max(0, Math.min(index, filteredDuplicates.length - 1));
   };
 
   let duplicatesIndex = $derived(
@@ -67,7 +75,7 @@
     })(),
   );
 
-  let hasDuplicates = $derived(duplicates.length > 0);
+  let hasDuplicates = $derived(filteredDuplicates.length > 0);
   const withConfirmation = async (callback: () => Promise<void>, prompt?: string, confirmText?: string) => {
     if (prompt && confirmText) {
       const isConfirmed = await modalManager.showDialog({ prompt, confirmText });
@@ -133,7 +141,7 @@
 
   const handleDeduplicateAll = async () => {
     // Use server-provided suggestedKeepAssetIds from each group
-    const idsToDelete = duplicates.flatMap((group) => {
+    const idsToDelete = filteredDuplicates.flatMap((group) => {
       const keepIds = new Set(group.suggestedKeepAssetIds);
       return group.assets.map((asset) => asset.id).filter((id) => !keepIds.has(id));
     });
@@ -152,7 +160,7 @@
         // Resolve all groups in a single batch request
         const response = await resolveDuplicates({
           duplicateResolveDto: {
-            groups: duplicates.map((group) => {
+            groups: filteredDuplicates.map((group) => {
               const keepIds = new Set(group.suggestedKeepAssetIds);
               return {
                 duplicateId: group.duplicateId,
@@ -169,7 +177,8 @@
           toastManager.danger($t('errors.unable_to_resolve_duplicate'));
         }
 
-        duplicates = [];
+        const resolvedIds = new Set(filteredDuplicates.map((g) => g.duplicateId));
+        duplicates = duplicates.filter((d) => !resolvedIds.has(d.duplicateId));
 
         deletedNotification(idsToDelete.length);
 
@@ -182,12 +191,13 @@
   };
 
   const handleKeepAll = async () => {
-    const ids = duplicates.map(({ duplicateId }) => duplicateId);
+    const ids = filteredDuplicates.map(({ duplicateId }) => duplicateId);
     return withConfirmation(
       async () => {
         await deleteDuplicates({ bulkIdsDto: { ids } });
 
-        duplicates = [];
+        const keptIds = new Set(ids);
+        duplicates = duplicates.filter((d) => !keptIds.has(d.duplicateId));
 
         toastManager.primary($t('resolved_all_duplicates'));
         page.url.searchParams.delete('index');
@@ -200,8 +210,8 @@
 
   const handleFirst = () => navigateToIndex(0);
   const handlePrevious = () => navigateToIndex(Math.max(duplicatesIndex - 1, 0));
-  const handleNext = async () => navigateToIndex(Math.min(duplicatesIndex + 1, duplicates.length - 1));
-  const handleLast = () => navigateToIndex(duplicates.length - 1);
+  const handleNext = async () => navigateToIndex(Math.min(duplicatesIndex + 1, filteredDuplicates.length - 1));
+  const handleLast = () => navigateToIndex(filteredDuplicates.length - 1);
 
   const navigateToIndex = async (index: number) =>
     goto(Route.duplicatesUtility({ index: correctDuplicatesIndex(index) }));
@@ -216,9 +226,36 @@
       ]}
 />
 
-<UserPageLayout title={data.meta.title + ` (${duplicates.length.toLocaleString($locale)})`} scrollbar={true}>
+<UserPageLayout title={data.meta.title + ` (${filteredDuplicates.length.toLocaleString($locale)})`} scrollbar={true}>
   {#snippet buttons()}
     <HStack gap={0}>
+      <Button
+        leadingIcon={mdiSelectAll}
+        onclick={() => (typeFilter = 'all')}
+        size="small"
+        variant={typeFilter === 'all' ? 'filled' : 'ghost'}
+        color={typeFilter === 'all' ? 'primary' : 'secondary'}
+      >
+        <Text class="hidden md:block">All</Text>
+      </Button>
+      <Button
+        leadingIcon={mdiImageOutline}
+        onclick={() => (typeFilter = 'IMAGE')}
+        size="small"
+        variant={typeFilter === 'IMAGE' ? 'filled' : 'ghost'}
+        color={typeFilter === 'IMAGE' ? 'primary' : 'secondary'}
+      >
+        <Text class="hidden md:block">Photos</Text>
+      </Button>
+      <Button
+        leadingIcon={mdiVideoOutline}
+        onclick={() => (typeFilter = 'VIDEO')}
+        size="small"
+        variant={typeFilter === 'VIDEO' ? 'filled' : 'ghost'}
+        color={typeFilter === 'VIDEO' ? 'primary' : 'secondary'}
+      >
+        <Text class="hidden md:block">Videos</Text>
+      </Button>
       <Button
         leadingIcon={mdiTrashCanOutline}
         onclick={() => handleDeduplicateAll()}
@@ -252,18 +289,18 @@
   {/snippet}
 
   <div>
-    {#if duplicates && duplicates.length > 0}
+    {#if filteredDuplicates && filteredDuplicates.length > 0}
       <Text size="small" color="muted" class="mb-4">
         <p>{$t('duplicates_description')} <LinkToDocs href="https://docs.immich.app/features/duplicates-utility" /></p>
       </Text>
 
-      {#key duplicates[duplicatesIndex].duplicateId}
+      {#key filteredDuplicates[duplicatesIndex].duplicateId}
         <DuplicatesCompareControl
-          assets={duplicates[duplicatesIndex].assets}
-          suggestedKeepAssetIds={duplicates[duplicatesIndex].suggestedKeepAssetIds}
+          assets={filteredDuplicates[duplicatesIndex].assets}
+          suggestedKeepAssetIds={filteredDuplicates[duplicatesIndex].suggestedKeepAssetIds}
           onResolve={(duplicateAssetIds, trashIds) =>
-            handleResolve(duplicates[duplicatesIndex].duplicateId, duplicateAssetIds, trashIds)}
-          onStack={(assets) => handleStack(duplicates[duplicatesIndex].duplicateId, assets)}
+            handleResolve(filteredDuplicates[duplicatesIndex].duplicateId, duplicateAssetIds, trashIds)}
+          onStack={(assets) => handleStack(filteredDuplicates[duplicatesIndex].duplicateId, assets)}
         />
         <div class="mx-auto mb-16 max-w-5xl">
           <div class="mb-4 flex w-full place-content-center place-items-center items-center justify-between sm:px-6">
@@ -290,7 +327,7 @@
               </Button>
             </div>
             <p class="rounded-lg border px-3 py-1 text-xs md:px-6 md:text-sm dark:bg-subtle">
-              {duplicatesIndex + 1} / {duplicates.length.toLocaleString($locale)}
+              {duplicatesIndex + 1} / {filteredDuplicates.length.toLocaleString($locale)}
             </p>
             <div class="flex text-xs text-black">
               <Button
@@ -299,7 +336,7 @@
                 color="primary"
                 class="flex place-items-center gap-2 rounded-s-full px-2 sm:px-4"
                 onclick={handleNext}
-                disabled={duplicatesIndex === duplicates.length - 1}
+                disabled={duplicatesIndex === filteredDuplicates.length - 1}
               >
                 {$t('next')}
               </Button>
@@ -309,7 +346,7 @@
                 color="primary"
                 class="flex place-items-center gap-2 rounded-e-full px-2 sm:px-4"
                 onclick={handleLast}
-                disabled={duplicatesIndex === duplicates.length - 1}
+                disabled={duplicatesIndex === filteredDuplicates.length - 1}
               >
                 {$t('last')}
               </Button>
