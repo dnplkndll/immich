@@ -1,0 +1,19 @@
+# CI-only copy. Source of truth: ~/projects/home/media/repos.yaml.
+# Used by .github/workflows/gitaggregate.yml on the dnplkndll branch.
+# Differs from the local file only in the project path key (`.:` vs `./immich-fork:`)
+# so git-aggregator runs against the checkout root in CI.
+.:
+  remotes:
+    upstream: https://github.com/immich-app/immich.git
+    origin: https://github.com/dnplkndll/immich.git
+  merges:
+    - upstream main
+    - origin feat/quality-scoring-rebased
+    - origin feat/integrated-editor
+    - origin feat/live-photo-polish
+    - origin feat/fork-config
+    - origin feat/metadata-first-backup-dedup
+    - origin feat/qt-mime-support
+    - origin feat/audio-fingerprinting
+    - origin feat/watch-companion
+  target: origin merged/deploy

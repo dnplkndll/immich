@@ -1,0 +1,137 @@
+name: gitaggregate (merged/deploy)
+
+# Merges upstream main + dnplkndll feature branches into merged/deploy.
+# On conflict, opens/comments a GitHub issue so the operator knows a manual
+# rebase is needed. Source of truth for the branch list: .github/repos.yaml.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # Monday 06:00 UTC
+  workflow_dispatch: {}
+
+concurrency:
+  group: gitaggregate
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  aggregate:
+    name: Merge feature branches into merged/deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dnplkndll
+          fetch-depth: 0
+          # WORKFLOW_TOKEN (PAT) so the merged/deploy push fires ledoent-build.yml.
+          # GITHUB_TOKEN pushes do NOT trigger downstream workflows.
+          token: ${{ secrets.WORKFLOW_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name  "github-actions[bot]"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install git-aggregator
+        run: pip install git-aggregator==4.0
+
+      - name: Run gitaggregate
+        id: agg
+        run: |
+          set -o pipefail
+          if gitaggregate -c .github/repos.yaml -p 2>&1 | tee /tmp/agg.log; then
+            echo "success=true" >> "$GITHUB_OUTPUT"
+            echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          else
+            echo "success=false" >> "$GITHUB_OUTPUT"
+            # git-aggregator logs "Pull <remote>, <branch>" before each merge attempt;
+            # the last one before exit is the branch that failed.
+            FAILED=$(grep -E "Pull [a-z]+, " /tmp/agg.log | tail -1 | sed -E 's/.*Pull [a-z]+, //')
+            echo "failed_branch=${FAILED:-unknown}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload aggregation log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitaggregate-log
+          path: /tmp/agg.log
+          if-no-files-found: ignore
+
+      - name: Create issue on failure
+        if: steps.agg.outputs.success != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = '${{ steps.agg.outputs.failed_branch }}';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              '## gitaggregate failed — manual rebase required',
+              '',
+              `**Branch with conflict:** \`${branch}\``,
+              `**Run log:** ${runUrl}`,
+              '',
+              'The weekly gitaggregate run could not merge this feature branch cleanly onto upstream/main.',
+              'Usually means upstream changed code that our branch also touched.',
+              '',
+              '**Steps to fix:**',
+              '```bash',
+              'cd ~/projects/home/media/immich-fork',
+              'git fetch origin upstream',
+              `git checkout ${branch}`,
+              'git rebase upstream/main   # resolve any conflicts',
+              `git push origin ${branch} --force-with-lease`,
+              '```',
+              '',
+              'Then re-run:',
+              '```bash',
+              'gh workflow run gitaggregate.yml --repo dnplkndll/immich',
+              '```',
+            ].join('\n');
+
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'build-failure',
+            });
+            if (existing.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.data[0].number,
+                body: `Still failing as of ${new Date().toISOString()} — \`${branch}\`. Run: ${runUrl}`,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `[merged/deploy] Merge conflict: ${branch}`,
+                body,
+                labels: ['build-failure'],
+                assignees: ['dnplkndll'],
+              });
+            }
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Gitaggregate result"
+            echo ''
+            if [ "${{ steps.agg.outputs.success }}" = "true" ]; then
+              echo "**Result:** success"
+              echo "**SHA:** \`${{ steps.agg.outputs.sha }}\` pushed to \`merged/deploy\`"
+            else
+              echo "**Result:** failed"
+              echo "**Conflict in:** \`${{ steps.agg.outputs.failed_branch }}\`"
+              echo "Issue created/updated. Manual rebase required."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
