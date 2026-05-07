@@ -22,7 +22,7 @@ jobs:
     name: Merge feature branches into merged/deploy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: dnplkndll
           fetch-depth: 0
@@ -35,7 +35,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name  "github-actions[bot]"
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.12'
 
@@ -59,7 +59,7 @@ jobs:
 
       - name: Upload aggregation log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: gitaggregate-log
           path: /tmp/agg.log
@@ -67,10 +67,12 @@ jobs:
 
       - name: Create issue on failure
         if: steps.agg.outputs.success != 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          FAILED_BRANCH: ${{ steps.agg.outputs.failed_branch }}
         with:
           script: |
-            const branch = '${{ steps.agg.outputs.failed_branch }}';
+            const branch = process.env.FAILED_BRANCH;
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const body = [
               '## gitaggregate failed — manual rebase required',
@@ -122,16 +124,20 @@ jobs:
 
       - name: Summary
         if: always()
+        env:
+          AGG_SUCCESS: ${{ steps.agg.outputs.success }}
+          AGG_SHA: ${{ steps.agg.outputs.sha }}
+          AGG_FAILED_BRANCH: ${{ steps.agg.outputs.failed_branch }}
         run: |
           {
             echo "### Gitaggregate result"
             echo ''
-            if [ "${{ steps.agg.outputs.success }}" = "true" ]; then
+            if [ "$AGG_SUCCESS" = "true" ]; then
               echo "**Result:** success"
-              echo "**SHA:** \`${{ steps.agg.outputs.sha }}\` pushed to \`merged/deploy\`"
+              echo "**SHA:** \`$AGG_SHA\` pushed to \`merged/deploy\`"
             else
               echo "**Result:** failed"
-              echo "**Conflict in:** \`${{ steps.agg.outputs.failed_branch }}\`"
+              echo "**Conflict in:** \`$AGG_FAILED_BRANCH\`"
               echo "Issue created/updated. Manual rebase required."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
