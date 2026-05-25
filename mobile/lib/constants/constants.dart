@@ -16,6 +16,12 @@ const int kBatchHashSizeLimit = 1024 * 1024 * 1024; // 1GB
 // Secure storage keys
 const String kSecuredPinCode = "secured_pin_code";
 
+// Sentinel checksum written to local_asset_entity.checksum when an asset has
+// been confirmed to exist on the server via cross-device EXIF metadata match.
+// Sentinel-marked rows skip the hash step and are excluded from the backup
+// remainder count.
+const String kServerConfirmedChecksum = '===SERVER_CONFIRMED===';
+
 // background_downloader task groups
 const String kManualUploadGroup = 'manual_upload_group';
 const String kBackupGroup = 'backup_group';

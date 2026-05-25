@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/album/local_album.model.dart';
 import 'package:immich_mobile/infrastructure/repositories/backup.repository.dart';
 import 'package:immich_mobile/utils/option.dart';
@@ -239,6 +240,80 @@ void main() {
       final result = await sut.getCandidates(userId);
       expect(result.length, 1);
       expect(result.first.id, asset.id);
+    });
+
+    test('excludes asset stamped with the server-confirmed sentinel checksum', () async {
+      final album = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+      final asset = await ctx.newLocalAsset(checksum: kServerConfirmedChecksum);
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: asset.id);
+
+      final result = await sut.getCandidates(userId);
+      expect(result, isEmpty);
+    });
+  });
+
+  group('markAsServerConfirmed', () {
+    late String userId;
+
+    setUp(() async {
+      final user = await ctx.newUser();
+      userId = user.id;
+    });
+
+    test('stamps checksum sentinel without remoteId when remoteIdMap is empty', () async {
+      final album = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+      final asset = await ctx.newLocalAsset();
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: asset.id);
+
+      await sut.markAsServerConfirmed([asset.id]);
+
+      final candidates = await sut.getCandidates(userId);
+      expect(candidates, isEmpty, reason: 'sentinel-stamped asset should be filtered out');
+    });
+
+    test('stamps sentinel + remoteId when remoteIdMap is provided', () async {
+      final asset = await ctx.newLocalAsset();
+
+      await sut.markAsServerConfirmed(
+        [asset.id],
+        remoteIdMap: {asset.id: 'server-uuid-abc'},
+      );
+
+      final updated = await (ctx.db.select(ctx.db.localAssetEntity)
+            ..where((t) => t.id.equals(asset.id)))
+          .getSingle();
+      expect(updated.checksum, kServerConfirmedChecksum);
+      expect(updated.remoteId, 'server-uuid-abc');
+    });
+  });
+
+  group('getUnmatchedBackupAssetMetadata', () {
+    late String userId;
+
+    setUp(() async {
+      final user = await ctx.newUser();
+      userId = user.id;
+    });
+
+    test('returns selected unmatched asset with dimensions', () async {
+      final album = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+      final asset = await ctx.newLocalAsset(width: 4032, height: 3024);
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: asset.id);
+
+      final result = await sut.getUnmatchedBackupAssetMetadata(userId);
+      expect(result.length, 1);
+      expect(result.first.id, asset.id);
+      expect(result.first.width, 4032);
+      expect(result.first.height, 3024);
+    });
+
+    test('excludes asset already confirmed via sentinel checksum', () async {
+      final album = await ctx.newLocalAlbum(backupSelection: BackupSelection.selected);
+      final asset = await ctx.newLocalAsset(checksum: kServerConfirmedChecksum, width: 100, height: 100);
+      await ctx.newLocalAlbumAsset(albumId: album.id, assetId: asset.id);
+
+      final result = await sut.getUnmatchedBackupAssetMetadata(userId);
+      expect(result, isEmpty);
     });
   });
 }

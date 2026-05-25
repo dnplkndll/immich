@@ -1,12 +1,19 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/album/local_album.model.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/infrastructure/entities/local_asset.entity.dart';
+import 'package:immich_mobile/infrastructure/entities/local_asset.entity.drift.dart';
 import 'package:immich_mobile/infrastructure/repositories/db.repository.dart';
 import 'package:immich_mobile/providers/infrastructure/db.provider.dart';
+
+/// Drift's parameter limit per single statement is 999. We chunk batch ops at
+/// 500 to leave headroom for joined / multi-param writes.
+const int kDriftMaxChunk = 500;
 
 final backupRepositoryProvider = Provider<DriftBackupRepository>(
   (ref) => DriftBackupRepository(ref.watch(driftProvider)),
@@ -37,11 +44,13 @@ class DriftBackupRepository extends DriftDatabaseRepository {
   ///              (includes processing)
   /// - processing: number of those assets that are still preparing/have a null checksum
   Future<({int total, int remainder, int processing})> getAllCounts(String userId) async {
+    // remainder_count excludes sentinel-checksum rows (assets already confirmed
+    // on server via the cross-device EXIF match). They aren't real candidates.
     const sql = '''
         SELECT
         COUNT(*) AS total_count,
         COUNT(*) FILTER (WHERE lae.checksum IS NULL) AS processing_count,
-        COUNT(*) FILTER (WHERE rae.id IS NULL) AS remainder_count
+        COUNT(*) FILTER (WHERE rae.id IS NULL AND lae.checksum IS NOT ?4) AS remainder_count
         FROM local_asset_entity lae
         LEFT JOIN main.remote_asset_entity rae
             ON lae.checksum = rae.checksum AND rae.owner_id = ?1
@@ -68,6 +77,7 @@ class DriftBackupRepository extends DriftDatabaseRepository {
             Variable.withString(userId),
             Variable.withInt(BackupSelection.selected.index),
             Variable.withInt(BackupSelection.excluded.index),
+            Variable.withString(kServerConfirmedChecksum),
           ],
           readsFrom: {_db.localAlbumAssetEntity, _db.localAlbumEntity, _db.localAssetEntity, _db.remoteAssetEntity},
         )
@@ -112,6 +122,113 @@ class DriftBackupRepository extends DriftDatabaseRepository {
       query.where((lae) => lae.checksum.isNotNull());
     }
 
+    // Exclude sentinel-checksum assets (already confirmed on server). We use
+    // isNull() | isNotValue() rather than a plain `<>` because `NULL <> value`
+    // is NULL (falsy) in SQL, which would wrongly drop the still-being-hashed
+    // rows from the result set.
+    query.where((lae) => lae.checksum.isNull() | lae.checksum.isNotValue(kServerConfirmedChecksum));
+
     return query.map((localAsset) => localAsset.toDto()).get();
+  }
+
+  /// Batch-updates checksums to the sentinel value for assets confirmed on
+  /// server. If [remoteIdMap] is provided, also stores the server asset UUID
+  /// for each local asset so later lookups can resolve local → remote without
+  /// a checksum join.
+  Future<void> markAsServerConfirmed(
+    List<String> assetIds, {
+    Map<String, String> remoteIdMap = const {},
+  }) async {
+    if (assetIds.isEmpty) {
+      return;
+    }
+
+    await _db.batch((batch) {
+      for (final slice in assetIds.slices(kDriftMaxChunk)) {
+        if (remoteIdMap.isEmpty) {
+          batch.update(
+            _db.localAssetEntity,
+            const LocalAssetEntityCompanion(checksum: Value(kServerConfirmedChecksum)),
+            where: ($LocalAssetEntityTable lae) => lae.id.isIn(slice),
+          );
+        } else {
+          for (final id in slice) {
+            final remote = remoteIdMap[id];
+            batch.update(
+              _db.localAssetEntity,
+              LocalAssetEntityCompanion(
+                checksum: const Value(kServerConfirmedChecksum),
+                remoteId: remote != null ? Value(remote) : const Value.absent(),
+              ),
+              where: ($LocalAssetEntityTable lae) => lae.id.equals(id),
+            );
+          }
+        }
+      }
+    });
+  }
+
+  /// Stores the server asset UUID for a local asset after a successful upload,
+  /// so future actions on the local asset can resolve directly to the server
+  /// row without re-matching by checksum.
+  Future<void> storeRemoteId(String localAssetId, String remoteAssetId) async {
+    await (_db.update(_db.localAssetEntity)..where((lae) => lae.id.equals(localAssetId))).write(
+      LocalAssetEntityCompanion(remoteId: Value(remoteAssetId)),
+    );
+  }
+
+  /// Returns minimal EXIF-matchable metadata for backup-selected local assets
+  /// that aren't yet confirmed on the server. Used by
+  /// [ServerExistenceCheckService] to ask the server which assets it already
+  /// has via the POST /assets/exist/metadata endpoint.
+  Future<List<({String id, String name, DateTime createdAt, int width, int height})>>
+      getUnmatchedBackupAssetMetadata(String userId) async {
+    const sql = '''
+        SELECT DISTINCT lae.id, lae.name, lae.created_at, lae.width, lae.height
+        FROM local_asset_entity lae
+        LEFT JOIN main.remote_asset_entity rae
+            ON lae.checksum = rae.checksum AND rae.owner_id = ?3
+        WHERE (lae.checksum IS NULL OR (rae.id IS NULL AND lae.checksum IS NOT ?4))
+        AND lae.width IS NOT NULL
+        AND lae.height IS NOT NULL
+        AND EXISTS (
+            SELECT 1
+            FROM local_album_asset_entity laa
+            INNER JOIN main.local_album_entity la ON laa.album_id = la.id
+            WHERE laa.asset_id = lae.id AND la.backup_selection = ?1
+        )
+        AND NOT EXISTS (
+            SELECT 1
+            FROM local_album_asset_entity laa
+            INNER JOIN main.local_album_entity la ON laa.album_id = la.id
+            WHERE laa.asset_id = lae.id AND la.backup_selection = ?2
+        );
+      ''';
+
+    final rows = await _db
+        .customSelect(
+          sql,
+          variables: [
+            Variable.withInt(BackupSelection.selected.index),
+            Variable.withInt(BackupSelection.excluded.index),
+            Variable.withString(userId),
+            Variable.withString(kServerConfirmedChecksum),
+          ],
+          readsFrom: {_db.localAlbumAssetEntity, _db.localAlbumEntity, _db.localAssetEntity, _db.remoteAssetEntity},
+        )
+        .get();
+
+    // DateTime columns are stored as ISO-8601 text (see build.yaml
+    // `store_date_time_values_as_text: true`).
+    return rows.map((row) {
+      final data = row.data;
+      return (
+        id: data['id'] as String,
+        name: data['name'] as String,
+        createdAt: DateTime.parse(data['created_at'] as String),
+        width: data['width'] as int,
+        height: data['height'] as int,
+      );
+    }).toList();
   }
 }

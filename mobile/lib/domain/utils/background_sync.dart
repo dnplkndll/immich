@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:immich_mobile/domain/services/server_existence_check.service.dart';
 import 'package:immich_mobile/domain/utils/migrate_cloud_ids.dart' as m;
 import 'package:immich_mobile/domain/utils/sync_linked_album.dart';
 import 'package:immich_mobile/providers/infrastructure/sync.provider.dart';
@@ -117,8 +118,19 @@ class BackgroundSyncManager {
 
     onHashingStart?.call();
 
+    // First ask the server to confirm any locally-unhashed assets that
+    // already exist via cross-device EXIF metadata match. Matched ones get
+    // a sentinel checksum stamped on them and are skipped by hashAssets().
+    // Best-effort: never block hashing if the call fails.
     _hashTask = runInIsolateGentle(
-      computation: (ref) => ref.read(hashServiceProvider).hashAssets(),
+      computation: (ref) async {
+        try {
+          await ref.read(serverExistenceCheckServiceProvider).run();
+        } catch (_) {
+          // Logged inside the service; swallow here so hashing still runs.
+        }
+        return ref.read(hashServiceProvider).hashAssets();
+      },
       debugLabel: 'hash-assets',
     );
 
