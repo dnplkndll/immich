@@ -318,7 +318,7 @@ export class AssetMediaService extends BaseService {
     dto: CheckExistingAssetsByMetadataDto,
   ): Promise<CheckExistingAssetsByMetadataResponseDto> {
     const results = await this.assetRepository.getByMetadata(auth.user.id, dto.assets);
-    this.logger.log(`Metadata check: ${results.length}/${dto.assets.length} matched by EXIF date+dimensions`);
+    this.logger.debug(`Metadata check: ${results.length}/${dto.assets.length} matched by EXIF date+dimensions`);
     return {
       existingIdMap: Object.fromEntries(results.map((r) => [r.localId, r.id])),
     };

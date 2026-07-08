@@ -72,7 +72,11 @@ const AssetBulkUploadCheckSchema = z
 const CheckExistingAssetsByMetadataItemSchema = z
   .object({
     localId: z.string().min(1).describe('Local asset ID (client-side identifier)'),
-    fileCreatedAt: isoDatetimeToDate.describe('File creation date (from EXIF or photo library)'),
+    fileCreatedAt: isoDatetimeToDate.describe(
+      'EXIF DateTimeOriginal instant — must be the same source the server stores as ' +
+        'asset_exif.dateTimeOriginal (not the photo-library creation date), or the ±2s ' +
+        'cross-device match will miss.',
+    ),
     width: z.int().positive().describe('Image/video width in pixels'),
     height: z.int().positive().describe('Image/video height in pixels'),
   })

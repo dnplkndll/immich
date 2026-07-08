@@ -670,6 +670,25 @@ export class AssetRepository {
       .execute();
   }
 
+  /**
+   * Advisory cross-device duplicate lookup by EXIF metadata. This is a HEURISTIC,
+   * not an identity check (unlike checksum-based bulkUploadCheck): burst shots,
+   * screenshots, and same-model photos can share dimensions and fall inside the
+   * ±2s window. Callers must treat a match as "probably already uploaded" and
+   * still verify by checksum before skipping an upload.
+   *
+   * `fileCreatedAt` MUST be the EXIF `DateTimeOriginal` instant (the same source
+   * `asset_exif.dateTimeOriginal` is written from); deriving it from the photo-
+   * library creation date or a different tz offset shifts the absolute instant
+   * and defeats the ±2s comparison. Assets with a null `dateTimeOriginal`
+   * (videos, no-EXIF images) never match.
+   *
+   * NOTE: runs one query per item. Batches are expected to be modest; a
+   * set-based rewrite is a follow-up (see PR discussion) once DB-tested.
+   *
+   * TODO(fork): add @GenerateSql + regenerate the SQL snapshot (needs `pnpm sql`
+   * against a DB) so this query is covered by the sql-generator suite.
+   */
   async getByMetadata(
     ownerId: string,
     items: Array<{ localId: string; fileCreatedAt: Date; width: number; height: number }>,
@@ -686,7 +705,10 @@ export class AssetRepository {
       const shortSide = Math.min(item.width, item.height);
       const longSide = Math.max(item.width, item.height);
 
-      const match = await this.db
+      // Fetch up to 2 candidates: if more than one asset matches the window+dimensions
+      // the match is ambiguous, so return nothing and let the client fall back to a
+      // checksum upload rather than silently skipping a distinct asset (data-loss risk).
+      const matches = await this.db
         .selectFrom('asset')
         .innerJoin('asset_exif', 'asset.id', 'asset_exif.assetId')
         .select(['asset.id'])
@@ -697,11 +719,11 @@ export class AssetRepository {
         .where(sql<boolean>`GREATEST("asset_exif"."exifImageWidth", "asset_exif"."exifImageHeight") = ${longSide}`)
         .where('asset.deletedAt', 'is', null)
         .orderBy('asset.id')
-        .limit(1)
-        .executeTakeFirst();
+        .limit(2)
+        .execute();
 
-      if (match) {
-        results.push({ localId: item.localId, id: match.id });
+      if (matches.length === 1) {
+        results.push({ localId: item.localId, id: matches[0].id });
       }
     }
 
