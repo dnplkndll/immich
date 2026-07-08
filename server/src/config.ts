@@ -225,6 +225,10 @@ export type MachineLearningConfig = SystemConfig['machineLearning'];
 export const defaults = Object.freeze<SystemConfig>({
   audioFingerprinting: {
     enabled: false,
+    // Max bit-error-rate (BER) between two Chromaprint fingerprints to call them a
+    // match. Identical audio sits near ~0, unrelated audio near ~0.5 (random). 0.35
+    // is intentionally permissive to catch re-encodes; if false positives appear it
+    // should be tightened toward ~0.15 with measured data.
     maxDistance: 0.35,
   },
   backup: {

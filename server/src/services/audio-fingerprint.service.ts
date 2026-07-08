@@ -1,32 +1,35 @@
 import { Injectable } from '@nestjs/common';
 import { JOBS_ASSET_PAGINATION_SIZE } from 'src/constants';
 import { OnJob } from 'src/decorators';
-import { AssetVisibility, JobName, JobStatus, QueueName } from 'src/enum';
+import { AssetType, AssetVisibility, JobName, JobStatus, QueueName } from 'src/enum';
 import { BaseService } from 'src/services/base.service';
 import { JobItem, JobOf } from 'src/types';
 import { isAudioFingerprintingEnabled } from 'src/utils/misc';
 
+// Reject fingerprint pairs whose lengths differ by more than this fraction: a
+// truncated fingerprint would produce an artificially low BER over the overlap.
+const MAX_LENGTH_MISMATCH_RATIO = 0.2;
+
 // Chromaprint returns unsigned 32-bit ints; PostgreSQL integer is signed 32-bit.
 // Reinterpret as signed — XOR/popcount is bit-identical either way.
-function toSigned32(n: number): number {
+// Exported for unit testing.
+export function toSigned32(n: number): number {
   return n | 0;
 }
 
-function popcount32(n: number): number {
+export function popcount32(n: number): number {
   n = n - ((n >>> 1) & 0x55555555);
   n = (n & 0x33333333) + ((n >>> 2) & 0x33333333);
   return (((n + (n >>> 4)) & 0x0f0f0f0f) * 0x01010101) >>> 24;
 }
 
-function computeBer(a: number[], b: number[]): number {
+export function computeBer(a: number[], b: number[]): number {
   const minLen = Math.min(a.length, b.length);
   if (minLen === 0) {
     return 1;
   }
-  // Reject pairs where lengths differ by more than 20% — truncated fingerprints
-  // would produce artificially low BER over the overlapping region
   const maxLen = Math.max(a.length, b.length);
-  if ((maxLen - minLen) / maxLen > 0.2) {
+  if ((maxLen - minLen) / maxLen > MAX_LENGTH_MISMATCH_RATIO) {
     return 1;
   }
   let bits = 0;
@@ -77,7 +80,7 @@ export class AudioFingerprintService extends BaseService {
       return JobStatus.Failed;
     }
 
-    if (asset.type !== 'VIDEO') {
+    if (asset.type !== AssetType.Video) {
       return JobStatus.Skipped;
     }
 
@@ -122,6 +125,13 @@ export class AudioFingerprintService extends BaseService {
     return JobStatus.Success;
   }
 
+  // NOTE: audio and visual dedup share the single asset.duplicateId column. The
+  // visual DuplicateService clears duplicateId when it finds no *visual* duplicates
+  // ("removing duplicateId"), which will wipe an audio-derived grouping if visual
+  // detection re-runs afterwards. Until the two subsystems are reconciled (e.g. a
+  // separate column, or gating the visual reset on audioFingerprintedAt), audio
+  // fingerprinting must run AFTER visual dedup and is best treated as subordinate.
+  // This duplicates DuplicateService.updateDuplicates — a shared helper is a follow-up.
   private async updateDuplicates(
     asset: { id: string; duplicateId: string | null },
     duplicateAssets: Array<{ assetId: string; duplicateId: string | null }>,

@@ -60,7 +60,7 @@
   let typeFilter = $state<'all' | 'IMAGE' | 'VIDEO'>('all');
 
   let filteredDuplicates = $derived(
-    typeFilter === 'all' ? duplicates : duplicates.filter((g) => g.assets[0]?.type === typeFilter),
+    typeFilter === 'all' ? duplicates : duplicates.filter((g) => g.assets.some((a) => a.type === typeFilter)),
   );
 
   const correctDuplicatesIndex = (index: number) => {
@@ -236,7 +236,7 @@
         variant={typeFilter === 'all' ? 'filled' : 'ghost'}
         color={typeFilter === 'all' ? 'primary' : 'secondary'}
       >
-        <Text class="hidden md:block">All</Text>
+        <Text class="hidden md:block">{$t('all')}</Text>
       </Button>
       <Button
         leadingIcon={mdiImageOutline}
@@ -245,7 +245,7 @@
         variant={typeFilter === 'IMAGE' ? 'filled' : 'ghost'}
         color={typeFilter === 'IMAGE' ? 'primary' : 'secondary'}
       >
-        <Text class="hidden md:block">Photos</Text>
+        <Text class="hidden md:block">{$t('photos')}</Text>
       </Button>
       <Button
         leadingIcon={mdiVideoOutline}
@@ -254,7 +254,7 @@
         variant={typeFilter === 'VIDEO' ? 'filled' : 'ghost'}
         color={typeFilter === 'VIDEO' ? 'primary' : 'secondary'}
       >
-        <Text class="hidden md:block">Videos</Text>
+        <Text class="hidden md:block">{$t('videos')}</Text>
       </Button>
       <Button
         leadingIcon={mdiTrashCanOutline}
