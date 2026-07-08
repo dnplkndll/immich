@@ -1,76 +1,72 @@
 # Immich Watch Complication — Xcode Setup
 
-The Swift source files here implement an Apple Watch complication that shows a
-random photo from your Immich Favorites. The files are ready; you need to add a
-watchOS target in Xcode and wire them up.
+The Swift source in this `Watch/` folder implements an Apple Watch complication
+that shows a random photo from your Immich Favorites:
 
-## Bundle IDs needed
+- `WatchBundle.swift` — the `@main` widget bundle
+- `WatchComplication.swift` — the `TimelineProvider` + complication views
+- `ImmichWatchAPI.swift` — networking (reads shared credentials from the App Group)
+- `WatchEntry.swift` — the timeline entry + disk cache
+- `WatchExtension.entitlements` — App Group `group.com.donkendall.immich.share`
+
+## ⚠️ Status: target committed, wiring INCOMPLETE — needs an Xcode session
+
+A `WatchExtension` target is committed in `Runner.xcodeproj`, and its placeholder
+bundle id / deployment target have been corrected (`com.donkendall.immich.Watch`,
+watchOS `10.0`). **But the complication will NOT install or run until the items
+below are done in Xcode** — they can't be hand-edited into the `.pbxproj` safely:
+
+1. **Add a watchOS App host target and embed the widget extension in it.** A
+   WidgetKit complication extension cannot be embedded directly in the iOS app —
+   watchOS requires a watchOS **App** target to host it. Today `WatchExtension.appex`
+   is not embedded in any shippable target (Runner only embeds the Widget + Share
+   extensions), so nothing packages it onto the watch. Add a minimal watchOS App
+   target, embed `WatchExtension` in it, and embed that Watch App in the iPhone
+   `Runner` target via an "Embed Watch Content" copy-files phase (+ target dependency).
+2. **Wire the entitlements.** In the `WatchExtension` target → Build Settings →
+   Signing, set **Code Signing Entitlements** to `Watch/WatchExtension.entitlements`.
+   Without this the App Group isn't applied, so `UserDefaults(suiteName:)` and the
+   App Group container return nil at runtime and the complication only ever renders
+   "Login to Immich on iPhone".
+3. **Provisioning.** Register `com.donkendall.immich.Watch` in App Store Connect,
+   create an App Store provisioning profile, install it, and update the CI secret.
+
+## Already done (committed)
+
+- Source files in `Watch/` (folder is a synchronized group → Watch target).
+- `WatchExtension` target with corrected `PRODUCT_BUNDLE_IDENTIFIER =
+  com.donkendall.immich.Watch` and `WATCHOS_DEPLOYMENT_TARGET = 10.0`.
+- The iPhone `Runner` target already declares the App Group
+  `group.com.donkendall.immich.share` (the Watch extension reuses it).
+
+## Bundle IDs
 
 | Target | Bundle ID |
 |---|---|
 | WatchExtension (complication) | `com.donkendall.immich.Watch` |
-
-Register `com.donkendall.immich.Watch` in App Store Connect and create an App
-Store provisioning profile for it (same workflow as the existing three profiles).
-
-## Xcode steps
-
-1. **Open** `mobile/ios/Runner.xcworkspace` in Xcode.
-
-2. **Add target** → File > New > Target > **watchOS > Widget Extension** (not
-   "Watch App" — that adds a full standalone app; we want just the WidgetKit
-   complication extension paired with the existing iPhone app).
-
-3. **Target name**: `WatchExtension`
-   **Bundle identifier**: `com.donkendall.immich.Watch`
-   **Team**: `6ZJTLNKLQR` (don kendall)
-   Uncheck "Include Configuration Intent" (we use `StaticConfiguration`).
-   Xcode will scaffold placeholder files — **delete them**.
-
-4. **Add source files** to the new target (drag or File > Add Files):
-   - `WatchExtension/ImmichWatchAPI.swift`
-   - `WatchExtension/WatchEntry.swift`
-   - `WatchExtension/WatchComplication.swift`
-   - `WatchExtension/WatchExtensionBundle.swift`
-   - **Also add** (from the project root, not copied): `ForkConfig.swift`
-
-5. **Set deployment target** for `WatchExtension` to **watchOS 9.0** minimum
-   (WidgetKit complications require 9.0+; `.accessoryRectangular` needs 9.0+).
-
-6. **Entitlements**: In the WatchExtension target's Build Settings → Signing,
-   set Code Signing Entitlements to `WatchExtension/WatchExtension.entitlements`.
-
-7. **App Group** in the iPhone app's `Runner` target:
-   Verify `group.com.donkendall.immich.share` is already in the Runner
-   entitlements — it is. The Watch extension uses the same group.
-
-8. **Build phases**: No CocoaPods dependency needed; the Watch extension is
-   pure Swift + WidgetKit.
-
-9. **Provisioning profile**: Set the WatchExtension target's provisioning profile
-   to the `com.donkendall.immich.Watch AppStore` profile (create this in App Store
-   Connect, then install it locally and update the GitHub secret for CI).
+| Team | `6ZJTLNKLQR` (don kendall) |
 
 ## CI / Fastlane
 
-Add the `WatchExtension` target to the `fork_testflight` lane in `Fastfile`:
+Add the `WatchExtension` target to the `fork_testflight` lane in `Fastfile`
+(and to `provisioningProfiles` + `export_options`) once the target wiring above
+is complete:
 
 ```ruby
 { target: "WatchExtension", bundle: "#{fork_bundle_id}.Watch", profile: watch_profile_name },
 ```
-
-And add it to the `provisioningProfiles` hash and `export_options`.
 
 ## How auth works
 
 The iPhone Immich app writes auth credentials to `UserDefaults` with suite
 `group.com.donkendall.immich.share` under keys `widget_server_url` and
 `widget_auth_token`. The Watch complication reads those same keys — no extra
-configuration needed once the user is logged in on iPhone.
+configuration once the user is logged in on iPhone (and the entitlements above
+are wired).
 
 ## What it shows
 
 - Fetches a random photo from Favorites (`isFavorite: true`) on a 1-hour refresh.
 - Supported complication families: `.accessoryRectangular`, `.accessoryCircular`.
 - Falls back to the last cached image on network failure.
-- Shows an error icon if no login is detected.
+- Shows an error state if no login is detected.

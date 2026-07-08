@@ -25,7 +25,7 @@ struct ImmichWatchProvider: TimelineProvider {
       entry.persist()
 
       // Refresh every hour
-      let refresh = Calendar.current.date(byAdding: .hour, value: 1, to: .now)!
+      let refresh = Calendar.current.date(byAdding: .hour, value: 1, to: .now) ?? .now.addingTimeInterval(3600)
       let timeline = Timeline(entries: [entry], policy: .after(refresh))
       completion(timeline)
     }

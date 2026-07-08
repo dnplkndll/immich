@@ -63,7 +63,7 @@ class ImmichWatchAPI {
     if let headersJSON = defaults.string(forKey: "widget_custom_headers"),
       !headersJSON.isEmpty,
       let parsedHeaders = try? JSONDecoder().decode(
-        CustomHeaders.self, from: headersJSON.data(using: .utf8)!)
+        CustomHeaders.self, from: Data(headersJSON.utf8))
     {
       customHeaders = parsedHeaders
     }
