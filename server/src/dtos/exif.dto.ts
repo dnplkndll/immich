@@ -30,7 +30,7 @@ export const ExifResponseSchema = z
     description: z.string().nullish().default(null).describe('Image description'),
     projectionType: z.string().nullish().default(null).describe('Projection type'),
     rating: z.int().min(1).max(5).nullish().default(null).describe('Rating'),
-    bitsPerSample: z.number().nullish().default(null).describe('Bits per sample (per channel)'),
+    bitsPerSample: z.int().nullish().default(null).describe('Bits per sample (per channel)'),
     profileDescription: z.string().nullish().default(null).describe('ICC profile description'),
     colorspace: z.string().nullish().default(null).describe('Colorspace'),
   })

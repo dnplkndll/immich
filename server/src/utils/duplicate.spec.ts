@@ -77,7 +77,7 @@ const createAsset = (
     visibility: AssetVisibility.Timeline,
     checksum: 'checksum',
     livePhotoVideoId,
-    exifInfo: hasExif ? (exifObj as unknown as AssetResponseDto['exifInfo']) : undefined,
+    exifInfo: hasExif ? ExifResponseSchema.parse(exifObj) : undefined,
   } as unknown as AssetResponseDto;
 };
 
@@ -259,6 +259,52 @@ describe('duplicate utils', () => {
       });
 
       expect(suggestDuplicate([wideGamut, srgb])?.id).toBe('wide');
+    });
+
+    it('should prefer higher bit depth along the non-linear curve (8 < 10 < 12 < 14 < 16)', () => {
+      // Assets identical except bitsPerSample, so only bitDepthScore decides the winner.
+      const base = { fileSizeInByte: 2_500_000, exifImageWidth: 4032, exifImageHeight: 3024 };
+      const make = (id: string, bits: number) => createAsset(id, { ...base, bitsPerSample: bits });
+      for (const [lo, hi] of [
+        [8, 10],
+        [10, 12],
+        [12, 14],
+        [14, 16],
+      ]) {
+        const loAsset = make(`b${lo}`, lo);
+        const hiAsset = make(`b${hi}`, hi);
+        expect(suggestDuplicate([loAsset, hiAsset])?.id).toBe(`b${hi}`);
+        expect(suggestDuplicate([hiAsset, loAsset])?.id).toBe(`b${hi}`);
+      }
+    });
+
+    it('should rank wider ICC gamuts higher (ProPhoto > Adobe RGB > Display P3)', () => {
+      const base = { fileSizeInByte: 2_500_000, exifImageWidth: 4032, exifImageHeight: 3024, bitsPerSample: 10 };
+      const prophoto = createAsset('prophoto', { ...base, profileDescription: 'ProPhoto RGB' });
+      const adobe = createAsset('adobe', { ...base, profileDescription: 'Adobe RGB (1998)' });
+      const p3 = createAsset('p3', { ...base, profileDescription: 'Display P3' });
+
+      expect(suggestDuplicate([adobe, prophoto])?.id).toBe('prophoto');
+      expect(suggestDuplicate([p3, adobe])?.id).toBe('adobe');
+    });
+
+    it('should ignore conversion profiles ("X to sRGB") and fall through to colorspace', () => {
+      const base = { fileSizeInByte: 2_500_000, exifImageWidth: 4032, exifImageHeight: 3024, bitsPerSample: 10 };
+      // Converted asset must NOT earn ProPhoto's score from a "ProPhoto RGB to sRGB" profile.
+      const converted = createAsset('converted', { ...base, profileDescription: 'ProPhoto RGB to sRGB' });
+      const adobe = createAsset('adobe', { ...base, profileDescription: 'Adobe RGB' });
+
+      expect(suggestDuplicate([converted, adobe])?.id).toBe('adobe');
+      expect(suggestDuplicate([adobe, converted])?.id).toBe('adobe');
+    });
+
+    it('should handle a group where every asset has fileSize 0 without NaN', () => {
+      const lowRes = createAsset('low', { exifImageWidth: 1920, exifImageHeight: 1080 });
+      lowRes.exifInfo = ExifResponseSchema.parse({ fileSizeInByte: 0, exifImageWidth: 1920, exifImageHeight: 1080 });
+      const highRes = createAsset('high', { exifImageWidth: 4032, exifImageHeight: 3024 });
+      highRes.exifInfo = ExifResponseSchema.parse({ fileSizeInByte: 0, exifImageWidth: 4032, exifImageHeight: 3024 });
+
+      expect(suggestDuplicate([lowRes, highRes])?.id).toBe('high');
     });
 
     it('should return first asset when scores are tied', () => {
