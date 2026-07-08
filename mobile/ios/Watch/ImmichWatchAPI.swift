@@ -1,4 +1,5 @@
 import Foundation
+import ImageIO
 import SwiftUI
 
 // Reads credentials from the same shared App Group that the iOS app and
