@@ -1,6 +1,7 @@
 import SwiftUI
 import WidgetKit
 
+
 extension Image {
   @ViewBuilder
   func tintedWidgetImageModifier() -> some View {
@@ -16,6 +17,15 @@ extension Image {
 struct ImmichWidgetView: View {
   var entry: ImageEntry
 
+  var body: some View {
+    StandardWidgetView(entry: entry)
+  }
+}
+
+// MARK: - Standard Widget View
+struct StandardWidgetView: View {
+  var entry: ImageEntry
+  
   var body: some View {
     if entry.image == nil {
       VStack {
@@ -34,7 +44,6 @@ struct ImmichWidgetView: View {
             .resizable()
             .tintedWidgetImageModifier()
             .scaledToFill()
-
         )
         VStack {
           Spacer()
