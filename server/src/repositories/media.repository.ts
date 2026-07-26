@@ -3,7 +3,7 @@ import { ExifDateTime, exiftool, WriteTags } from 'exiftool-vendored';
 import ffmpeg, { FfprobeData, FfprobeStream } from 'fluent-ffmpeg';
 import _ from 'lodash';
 import { Duration } from 'luxon';
-import { spawn } from 'node:child_process';
+import { execFile as execFileCb, spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import { Writable } from 'node:stream';
 import sharp from 'sharp';
@@ -554,5 +554,27 @@ export class MediaRepository {
     }
     const median = history.sort((a, b) => a - b)[1];
     return outputFrames + median;
+  }
+
+  async fingerprintAudio(input: string): Promise<{ fingerprint: number[]; duration: number } | null> {
+    return new Promise((resolve) => {
+      execFileCb('fpcalc', ['-raw', '-json', '-length', '120', input], (error, stdout) => {
+        if (error) {
+          this.logger.debug(`Could not fingerprint audio: ${error.message}`);
+          resolve(null);
+          return;
+        }
+        try {
+          const data = JSON.parse(stdout);
+          if (!Array.isArray(data.fingerprint) || data.fingerprint.length === 0) {
+            resolve(null);
+            return;
+          }
+          resolve({ fingerprint: data.fingerprint, duration: Number(data.duration) });
+        } catch {
+          resolve(null);
+        }
+      });
+    });
   }
 }
