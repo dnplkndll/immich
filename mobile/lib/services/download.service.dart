@@ -89,12 +89,17 @@ class DownloadService {
       return false;
     }
 
-    final imageRecord = _findTaskRecord(records, livePhotosId, LivePhotosPart.image);
-    final videoRecord = _findTaskRecord(records, livePhotosId, LivePhotosPart.video);
-    final imageFilePath = await imageRecord.task.filePath();
-    final videoFilePath = await videoRecord.task.filePath();
+    String? imageFilePath;
+    String? videoFilePath;
+    List<String>? taskIds;
 
     try {
+      final imageRecord = _findTaskRecord(records, livePhotosId, LivePhotosPart.image);
+      final videoRecord = _findTaskRecord(records, livePhotosId, LivePhotosPart.video);
+      imageFilePath = await imageRecord.task.filePath();
+      videoFilePath = await videoRecord.task.filePath();
+      taskIds = [imageRecord.task.taskId, videoRecord.task.taskId];
+
       final result = await _fileMediaRepository.saveLivePhoto(
         image: File(imageFilePath),
         video: File(videoFilePath),
@@ -103,10 +108,16 @@ class DownloadService {
 
       return result != null;
     } on PlatformException catch (error, stack) {
-      // Handle saving MotionPhotos on iOS
+      // Handle saving MotionPhotos or incompatible Live Photos on iOS.
+      // PHPhotosErrorDomain (-1): general error (e.g. Android motion photo)
+      // PHPhotosErrorDomain (-3302): invalid resource (e.g. mismatched CID or format)
       if (error.code.startsWith('PHPhotosErrorDomain')) {
-        final result = await _fileMediaRepository.saveImageWithFile(imageFilePath, title: task.filename);
-        return result != null;
+        _log.warning("Live photo save failed (${error.code}), falling back to image-only save");
+        if (imageFilePath != null) {
+          final result = await _fileMediaRepository.saveImageWithFile(imageFilePath, title: task.filename);
+          return result != null;
+        }
+        return false;
       }
       _log.severe("Error saving live photo", error, stack);
       return false;
@@ -114,17 +125,23 @@ class DownloadService {
       _log.severe("Error saving live photo", error, stack);
       return false;
     } finally {
-      final imageFile = File(imageFilePath);
-      if (await imageFile.exists()) {
-        await imageFile.delete();
+      if (imageFilePath != null) {
+        final imageFile = File(imageFilePath);
+        if (await imageFile.exists()) {
+          await imageFile.delete();
+        }
       }
 
-      final videoFile = File(videoFilePath);
-      if (await videoFile.exists()) {
-        await videoFile.delete();
+      if (videoFilePath != null) {
+        final videoFile = File(videoFilePath);
+        if (await videoFile.exists()) {
+          await videoFile.delete();
+        }
       }
 
-      await _downloadRepository.deleteRecordsWithIds([imageRecord.task.taskId, videoRecord.task.taskId]);
+      if (taskIds != null) {
+        await _downloadRepository.deleteRecordsWithIds(taskIds);
+      }
     }
   }
 
