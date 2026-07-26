@@ -7499,7 +7499,9 @@ export enum JobName {
     IntegrityChecksumFiles = "IntegrityChecksumFiles",
     IntegrityChecksumFilesRefresh = "IntegrityChecksumFilesRefresh",
     IntegrityDeleteReportType = "IntegrityDeleteReportType",
-    IntegrityDeleteReports = "IntegrityDeleteReports"
+    IntegrityDeleteReports = "IntegrityDeleteReports",
+    AudioFingerprintQueueAll = "AudioFingerprintQueueAll",
+    AudioFingerprint = "AudioFingerprint"
 }
 export enum SearchSuggestionType {
     Country = "country",

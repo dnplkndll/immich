@@ -45,6 +45,11 @@ const updatedConfig = Object.freeze<SystemConfig>({
     [QueueName.Workflow]: { concurrency: 5 },
     [QueueName.IntegrityCheck]: { concurrency: 1 },
     [QueueName.Editor]: { concurrency: 2 },
+    [QueueName.AudioAnalysis]: { concurrency: 2 },
+  },
+  audioFingerprinting: {
+    enabled: false,
+    maxDistance: 0.35,
   },
   backup: {
     database: {

@@ -21,6 +21,7 @@ import { ActivityRepository } from 'src/repositories/activity.repository';
 import { AlbumUserRepository } from 'src/repositories/album-user.repository';
 import { AlbumRepository } from 'src/repositories/album.repository';
 import { ApiKeyRepository } from 'src/repositories/api-key.repository';
+import { AudioFingerprintRepository } from 'src/repositories/audio-fingerprint.repository';
 import { AppRepository } from 'src/repositories/app.repository';
 import { AssetEditRepository } from 'src/repositories/asset-edit.repository';
 import { AssetJobRepository } from 'src/repositories/asset-job.repository';
@@ -222,6 +223,7 @@ export type ServiceOverrides = {
   activity: ActivityRepository;
   album: AlbumRepository;
   albumUser: AlbumUserRepository;
+  audioFingerprint: AudioFingerprintRepository;
   apiKey: ApiKeyRepository;
   app: AppRepository;
   asset: AssetRepository;
@@ -307,6 +309,7 @@ export const getMocks = () => {
     activity: automock(ActivityRepository),
     album: automock(AlbumRepository, { strict: false }),
     albumUser: automock(AlbumUserRepository),
+    audioFingerprint: automock(AudioFingerprintRepository),
     asset: newAssetRepositoryMock(),
     assetEdit: automock(AssetEditRepository),
     assetJob: automock(AssetJobRepository),
@@ -375,6 +378,7 @@ export const newTestService = <T extends BaseService>(
     overrides.activity || (mocks.activity as As<ActivityRepository>),
     overrides.album || (mocks.album as As<AlbumRepository>),
     overrides.albumUser || (mocks.albumUser as As<AlbumUserRepository>),
+    overrides.audioFingerprint || (mocks.audioFingerprint as As<AudioFingerprintRepository>),
     overrides.apiKey || (mocks.apiKey as As<ApiKeyRepository>),
     overrides.app || (mocks.app as As<AppRepository>),
     overrides.asset || (mocks.asset as As<AssetRepository>),
